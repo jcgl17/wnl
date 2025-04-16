@@ -11,6 +11,7 @@ else
 	SLOT=1
 fi
 
+# shellcheck disable=SC2124
 CMD="$@"
 EXIT_AFTER_NONZERO="${EXIT_AFTER_NONZERO:-0}"
 
@@ -26,8 +27,6 @@ echo $$ > "$PIDFILE"
 SHELL_CMD="$SHELL -c"
 
 RUNNING_CMD=0
-EXIT_CODE=
-TIME_FINISHED=
 
 # https://unix.stackexchange.com/a/10065
 if test -t 1; then
@@ -51,10 +50,8 @@ fi
 
 handle_usr1() {
 	if [ "$RUNNING_CMD" -eq 0 ]; then
-		RUNNING_CMD=-1
-		$SHELL_CMD "$CMD" >&1 2>&2 &
-		RUNNING_CMD=$!
-		wait "$RUNNING_CMD"
+		RUNNING_CMD=1
+		$SHELL_CMD "$CMD" >&1 2>&2
 		EXIT_CODE="$?"
 		TIME_FINISHED="$(date +%X)"
 		if [ "$EXIT_CODE" -ne 0 ]; then
@@ -73,12 +70,15 @@ handle_usr1() {
 }
 
 handle_usr2() {
+	echo $RUNNING_CMD
 	if [ "$RUNNING_CMD" -ne 0 ]; then
+		echo here
 		kill -INT "$RUNNING_CMD"
 	fi
 }
 
 handle_exit() {
+	# echo removing pidfile
 	rm -f "$PIDFILE"
 	kill "$SLP_PID"
 }
