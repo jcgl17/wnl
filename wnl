@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# check if $1 is a number
+if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
+	# if it is, then use it as the slot
+	SLOT=$1
+	# and then shift (remove $1 from args) to have the rest turn into CMD
+	shift
+else
+	# otherwise, default to 1 as the slot
+	SLOT=1
+fi
+
+CMD="$@"
+EXIT_AFTER_NONZERO="${EXIT_AFTER_NONZERO:-0}"
+
+PIDFILE="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${SLOT}.pid"
+
+exec 17>>"$PIDFILE"
+if ! flock -n -x 17; then
+    echo "Error: unable to acquire lock on $PIDFILE" >&2
+    exit 1
+fi
+echo $$ > "$PIDFILE"
+
+SHELL_CMD="$SHELL -c"
+
+RUNNING_CMD=0
+EXIT_CODE=
+TIME_FINISHED=
+
+# https://unix.stackexchange.com/a/10065
+if test -t 1; then
+    # see if it supports colors...
+    ncolors=$(tput colors)
+    if test -n "$ncolors" && test "$ncolors" -ge 8; then
+        bold="$(tput bold)"
+        underline="$(tput smul)"
+        standout="$(tput smso)"
+        normal="$(tput sgr0)"
+        black="$(tput setaf 0)"
+        red="$(tput setaf 1)"
+        green="$(tput setaf 2)"
+        yellow="$(tput setaf 3)"
+        blue="$(tput setaf 4)"
+        magenta="$(tput setaf 5)"
+        cyan="$(tput setaf 6)"
+        white="$(tput setaf 7)"
+    fi
+fi
+
+handle_usr1() {
+	if [ "$RUNNING_CMD" -eq 0 ]; then
+		RUNNING_CMD=-1
+		$SHELL_CMD "$CMD" >&1 2>&2 &
+		RUNNING_CMD=$!
+		wait "$RUNNING_CMD"
+		EXIT_CODE="$?"
+		TIME_FINISHED="$(date +%X)"
+		if [ "$EXIT_CODE" -ne 0 ]; then
+			bracket_color="${red}"
+			exit_code_color="${red}${bold}"
+		else
+			bracket_color="${cyan}"
+			exit_code_color="${normal}"
+		fi
+		echo "${bracket_color}[[ ${normal}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} at ${TIME_FINISHED} ${bracket_color}]]${normal}"
+		if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
+			exit "$EXIT_CODE"
+		fi
+		RUNNING_CMD=0
+	fi
+}
+
+handle_usr2() {
+	if [ "$RUNNING_CMD" -ne 0 ]; then
+		kill -INT "$RUNNING_CMD"
+	fi
+}
+
+handle_exit() {
+	rm -f "$PIDFILE"
+	kill "$SLP_PID"
+}
+
+trap handle_usr1 SIGUSR1
+trap handle_usr2 SIGUSR2
+trap handle_exit EXIT
+
+while true; do 
+	sleep infinity &
+	SLP_PID=$!
+	wait
+	kill "$SLP_PID"
+done

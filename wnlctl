@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# check if $1 is a number
+if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
+	# if it is, then use it as the slot
+	SLOT=$1
+	# and then shift (remove $1 from args) to have the rest turn into CMD
+	shift
+else
+	# otherwise, default to 1 as the slot
+	SLOT=1
+fi
+
+PIDFILE="${XDG_RUNTIME_DIR:?is required}/wnl_slot_${SLOT}.pid"
+
+if [ ! -f "$PIDFILE" ]; then
+	echo "Error: pidfile $PIDFILE not found" >&2
+	exit 1
+fi
+
+PID=$(cat "$PIDFILE")
+
+SIGNAL=${SIGNAL:-USR1}
+
+if ! kill -0 "$PID" >/dev/null 2>&1; then
+	echo "Error: process $PID not found" >&2
+	exit 1
+fi
+
+echo sending signal "-${SIGNAL}" 
+kill "-${SIGNAL}" "$PID"
