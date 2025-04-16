@@ -1,5 +1,6 @@
 #!/bin/bash
 
+### ARG PARSING {{
 # check if $1 is a number
 if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
 	# if it is, then use it as the slot
@@ -13,10 +14,18 @@ fi
 
 # shellcheck disable=SC2124
 CMD="$@"
+### }} ARG PARSING
+
+### CONFIGURATION {{
 EXIT_AFTER_NONZERO="${EXIT_AFTER_NONZERO:-0}"
+SHELL_CMD="${SHELL_CMD:-"$SHELL -c"}"
+### }} CONFIGURATION
 
+### CONSTANTS {{
 PIDFILE="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${SLOT}.pid"
+### }} CONSTANTS
 
+# make pidfile with locking
 exec 17>>"$PIDFILE"
 if ! flock -n -x 17; then
     echo "Error: unable to acquire lock on $PIDFILE" >&2
@@ -24,10 +33,7 @@ if ! flock -n -x 17; then
 fi
 echo $$ > "$PIDFILE"
 
-SHELL_CMD="$SHELL -c"
-
-RUNNING_CMD=0
-
+# define colors
 # https://unix.stackexchange.com/a/10065
 if test -t 1; then
     # see if it supports colors...
@@ -49,32 +55,11 @@ if test -t 1; then
 fi
 
 handle_usr1() {
-	if [ "$RUNNING_CMD" -eq 0 ]; then
-		RUNNING_CMD=1
-		$SHELL_CMD "$CMD" >&1 2>&2
-		EXIT_CODE="$?"
-		TIME_FINISHED="$(date +%X)"
-		if [ "$EXIT_CODE" -ne 0 ]; then
-			bracket_color="${red}"
-			exit_code_color="${red}${bold}"
-		else
-			bracket_color="${cyan}"
-			exit_code_color="${normal}"
-		fi
-		echo "${bracket_color}[[ ${normal}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} at ${TIME_FINISHED} ${bracket_color}]]${normal}"
-		if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
-			exit "$EXIT_CODE"
-		fi
-		RUNNING_CMD=0
-	fi
+	SIGNAL_START=1
 }
 
-handle_usr2() {
-	echo $RUNNING_CMD
-	if [ "$RUNNING_CMD" -ne 0 ]; then
-		echo here
-		kill -INT "$RUNNING_CMD"
-	fi
+handle_usr2(){
+	SIGNAL_STOP=1
 }
 
 handle_exit() {
@@ -87,9 +72,63 @@ trap handle_usr1 SIGUSR1
 trap handle_usr2 SIGUSR2
 trap handle_exit EXIT
 
+summarize() {
+	if [ "$EXIT_CODE" -ne 0 ]; then
+		bracket_color="${red}"
+		exit_code_color="${red}${bold}"
+	else
+		bracket_color="${cyan}"
+		exit_code_color="${normal}"
+	fi
+	echo "${bracket_color}[[ ${normal}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} at $(date +%X) ${bracket_color}]]${normal}"
+	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
+		exit "$EXIT_CODE"
+	fi
+}
+
+sleep infinity &
+SLP_PID=$!
+SIGNAL_START=0
+SIGNAL_STOP=0
 while true; do 
-	sleep infinity &
-	SLP_PID=$!
-	wait
-	kill "$SLP_PID"
+	# echo eval state begin: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
+	if [ "$SIGNAL_STOP" -eq "1" ]; then
+		# if RUNNING_CMD is defined and it's running, then kill it
+		if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			# Kill the actual process the user specified, rather than trying to kill the shell 
+			# _running_ that command.
+			# kill -INT "$RUNNING_CMD"
+			SHELL_CHILD=$(pgrep -P "$RUNNING_CMD")
+			if [ -n "$SHELL_CHILD" ]; then
+				kill -INT "$SHELL_CHILD"
+			fi
+			wait -n "$RUNNING_CMD"
+			EXIT_CODE=$?
+			summarize
+		fi
+	elif [ "$SIGNAL_START" -eq 1 ]; then
+		# if RUNNING_CMD is not defined or it's not running, then start it
+		if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			$SHELL_CMD "$CMD" >&1 2>&2 &
+			RUNNING_CMD=$!
+		fi
+	fi
+	SIGNAL_START=0
+	SIGNAL_STOP=0
+	# echo eval state end: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
+	if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
+		wait -n "$RUNNING_CMD"
+		EXIT_CODE=$?
+		# only summarize if RUNNING_CMD is done, i.e. that the wait wasn't just interrupted to handle a signal
+		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			summarize
+		fi
+	else
+		wait
+	fi
+	# restart infinite sleep, just in case it got killed somehow (e.g. by the user)
+	if ! kill -0 "$SLP_PID" 2>/dev/null; then
+		sleep infinity &
+		SLP_PID=$!
+	fi
 done
