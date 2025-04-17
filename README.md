@@ -27,6 +27,18 @@ done
 [[ finished with exit code 0 at 13:08:17 ]]
 ```
 
+## Installation
+
+### Manual
+
+Put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.local/bin`.
+
+### Packages
+
+I'm working on building packages for various distros, but only have RPM packages figured out for now.
+
+Download the packages or add the openSUSE Build Service repository [here](https://software.opensuse.org//download.html?project=home%3Ajcgl&package=wnl).
+
 ## The problem space
 
 In both IDEs and Unix-as-IDE, you need to execute various tasks besides editing source code:
@@ -35,8 +47,7 @@ In both IDEs and Unix-as-IDE, you need to execute various tasks besides editing 
 - push code
 
 In a typical IDE, you have buttons for these functions. More critically, you have keyboard shortcuts.
-Those shortcuts allow you execute those other tasks with little friction—
-just a brief flick of your fingers, without any need to even unfocus from your editor.
+Those shortcuts allow you execute those other tasks with little friction—just a brief flick of your fingers, without any need to even unfocus from your editor.
 
 In Unix-as-IDE, what's typical is to go to a shell
 (either by Ctrl-Z to background your text editor, or by switching to a window, terminal pane, etc.).
