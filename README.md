@@ -39,6 +39,20 @@ I'm working on building packages for various distros, but only have RPM packages
 
 Download the packages or add the openSUSE Build Service repository [here](https://software.opensuse.org//download.html?project=home%3Ajcgl&package=wnl).
 
+## Additional features
+
+### Multiple instances
+
+To run multiple `wnl` instances, you can run `wnl SLOT_ID COMMAND`, where `SLOT_ID` is a number. `SLOT_ID` defaults to 1 for easy use, so you only need to specify `SLOT_ID` when you start using more than one instance of `wnl` at a time.
+
+Correspondingly, call `wnlctl SLOT_ID` to signal the `wnl` instance with that SLOT_ID.
+
+### Killing program execution
+
+Not only can `wnl` start command execution, but it can also end it.
+
+Call `SIGNAL=USR2 wnlctl` to kill the command running in `wnl` (SIGINT is sent).
+
 ## The problem space
 
 In both IDEs and Unix-as-IDE, you need to execute various tasks besides editing source code:
