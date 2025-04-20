@@ -104,7 +104,9 @@ while true; do
 			fi
 			wait -n "$RUNNING_CMD"
 			EXIT_CODE=$?
-			summarize
+			if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+				summarize
+			fi
 		fi
 	elif [ "$SIGNAL_START" -eq 1 ]; then
 		# if RUNNING_CMD is not defined or it's not running, then start it
