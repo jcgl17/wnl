@@ -80,5 +80,5 @@ However, it lacks the extremely rapid feedback loops and reduced mental overhead
   - [ ] Redesign to use named pipes instead of signals for IPC
   - [ ] Allow sending custom signals (e.g. SIGTERM) to command invocations
   - [ ] Allow sending text to command invocations' `stdin`
-- [ ] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command invocations
+- [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command invocations
 - [ ] Add config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command invocation finishes

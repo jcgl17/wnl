@@ -23,6 +23,8 @@ SHELL_CMD="${SHELL_CMD:-"$SHELL -c"}"
 
 ### CONSTANTS {{
 PIDFILE="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${SLOT}.pid"
+SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
+SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
 ### }} CONSTANTS
 
 # make pidfile with locking
@@ -80,6 +82,7 @@ summarize() {
 		bracket_color="${cyan}"
 		exit_code_color="${normal}"
 	fi
+	echo -ne "$SHELL_INTEGRATION_PROMPT_START"
 	echo "${bracket_color}[[ ${normal}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} at $(date +%X) ${bracket_color}]]${normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
@@ -111,6 +114,7 @@ while true; do
 	elif [ "$SIGNAL_START" -eq 1 ]; then
 		# if RUNNING_CMD is not defined or it's not running, then start it
 		if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			echo -ne "$SHELL_INTEGRATION_CMD_START"
 			$SHELL_CMD "$CMD" >&1 2>&2 &
 			RUNNING_CMD=$!
 		fi
