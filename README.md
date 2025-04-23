@@ -39,6 +39,17 @@ I'm working on building packages for various distros, but only have RPM packages
 
 Download the packages or add the openSUSE Build Service repository [here](https://software.opensuse.org//download.html?project=home%3Ajcgl&package=wnl).
 
+## Roadmap
+
+- [X] Multiple instances ("slots")
+- [X] Allow sending SIGINT to command invocations
+- [ ] Richer functionality
+  - [ ] Redesign to use named pipes instead of signals for IPC
+  - [ ] Allow sending custom signals (e.g. SIGTERM) to command invocations
+  - [ ] Allow sending text to command invocations' `stdin`
+- [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command invocations
+- [ ] Add config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command invocation finishes
+
 ## Additional features
 
 ### Multiple instances
@@ -71,14 +82,3 @@ That typical Unix-as-IDE approach has the virtues of being both simple and easil
 it's easy to understand, and it's trivial to modify your command lines as your needs, languages, and toolchains change.
 
 However, it lacks the extremely rapid feedback loops and reduced mental overhead that you get with IDEs' keyboard shortcuts.
-
-## Roadmap
-
-- [X] Multiple instances ("slots")
-- [X] Allow sending SIGINT to command invocations
-- [ ] Richer functionality
-  - [ ] Redesign to use named pipes instead of signals for IPC
-  - [ ] Allow sending custom signals (e.g. SIGTERM) to command invocations
-  - [ ] Allow sending text to command invocations' `stdin`
-- [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command invocations
-- [ ] Add config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command invocation finishes
