@@ -12,8 +12,10 @@ else
 	SLOT=1
 fi
 
-# shellcheck disable=SC2124
-CMD="$@"
+CMD="$*"
+# cut is needed--the user may have quoted their CMD.
+# that makes the entire CMD as $1--not just its first space-delimited word
+CMD_NAME=$(echo "$1" | cut -f1 -d' ')
 ### }} ARG PARSING
 
 ### CONFIGURATION {{
@@ -74,7 +76,7 @@ trap handle_usr1 SIGUSR1
 trap handle_usr2 SIGUSR2
 trap handle_exit EXIT
 
-summarize() {
+afterword() {
 	if [ "$EXIT_CODE" -ne 0 ]; then
 		bracket_color="${red}"
 		exit_code_color="${red}${bold}"
@@ -87,6 +89,11 @@ summarize() {
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
+}
+
+foreword() {
+	bracket_color="${cyan}"
+	echo "${bracket_color}[[ ${normal}running ${CMD_NAME} at $(date +%X) ${bracket_color}]]${normal}"
 }
 
 sleep infinity &
@@ -108,12 +115,13 @@ while true; do
 			wait -n "$RUNNING_CMD"
 			EXIT_CODE=$?
 			if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
-				summarize
+				afterword
 			fi
 		fi
 	elif [ "$SIGNAL_START" -eq 1 ]; then
 		# if RUNNING_CMD is not defined or it's not running, then start it
 		if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			foreword
 			echo -ne "$SHELL_INTEGRATION_CMD_START"
 			$SHELL_CMD "$CMD" >&1 2>&2 &
 			RUNNING_CMD=$!
@@ -127,7 +135,7 @@ while true; do
 		EXIT_CODE=$?
 		# only summarize if RUNNING_CMD is done, i.e. that the wait wasn't just interrupted to handle a signal
 		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
-			summarize
+			afterword
 		fi
 	else
 		wait
