@@ -50,6 +50,8 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 - [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command invocations
 - [X] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command invocation finishes
 - [X] Pre- and post-exec hooks
+- [ ] Bash completion
+- [ ] Man page
 
 ## Additional features
 
