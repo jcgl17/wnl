@@ -42,13 +42,14 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 ## Roadmap
 
 - [X] Multiple instances ("slots")
-- [X] Allow sending SIGINT to command invocations
+  - [X] Automatically use first available slot if slot ID not specified
+- [X] Allow sending SIGINT to command executions
 - [ ] Richer controls from `wnlctl`
   - [ ] Named pipes instead of signals for IPC
-  - [ ] Custom signals (e.g. SIGTERM) to command invocations
-  - [ ] Text to command invocations' `stdin`
-- [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command invocations
-- [X] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command invocation finishes
+  - [ ] Custom signals (e.g. SIGTERM) to command executions
+  - [ ] Text to command executions' `stdin`
+- [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
+- [X] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
 - [X] Pre- and post-exec hooks
 - [ ] Bash completion
 - [ ] Man page

@@ -1,5 +1,28 @@
 #!/bin/bash
 
+load_rc_file() {
+	# shellcheck disable=SC1090
+	test -f "$RC_FILE" && source "$RC_FILE"
+}
+
+### CONFIGURATION {{
+RC_FILE="${RC_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}"
+EXIT_AFTER_NONZERO=0
+SHELL_CMD="$SHELL -c"
+HOOK_PRE=
+HOOK_POST=
+BANNER_PRE_ENABLE=1
+BANNER_POST_ENABLE=1
+SHELL_INTEGRATION_ENABLE=1
+MAXSLOT=10
+load_rc_file
+### }} CONFIGURATION
+
+pidfile() {
+	local slot=$1
+	echo "${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${slot}.pid"
+}
+
 ### ARG PARSING {{
 # check if $1 is a number
 if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
@@ -8,8 +31,18 @@ if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
 	# and then shift (remove $1 from args) to have the rest turn into CMD
 	shift
 else
-	# otherwise, default to 1 as the slot
-	SLOT=1
+	# otherwise, find the first available slot
+	AUTOSLOT=1
+	for ((i=1; i <= "$MAXSLOT"; i++)); do
+		if [ ! -f "$(pidfile $i)" ]; then
+			SLOT=$i
+			break
+		fi
+	done
+	if [ -z "$SLOT" ]; then
+		echo Error: unable to find an available slot
+		exit 1
+	fi
 fi
 
 CMD="$*"
@@ -18,27 +51,8 @@ CMD="$*"
 CMD_NAME=$(echo "$1" | cut -f1 -d' ')
 ### }} ARG PARSING
 
-RC_FILE="${RC_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}"
-
-
-load_rc_file() {
-	# shellcheck disable=SC1090
-	test -f "$RC_FILE" && source "$RC_FILE"
-}
-
-### CONFIGURATION {{
-EXIT_AFTER_NONZERO=0
-SHELL_CMD="$SHELL -c"
-HOOK_PRE=
-HOOK_POST=
-BANNER_PRE_ENABLE=1
-BANNER_POST_ENABLE=1
-SHELL_INTEGRATION_ENABLE=1
-load_rc_file
-### }} CONFIGURATION
-
 ### CONSTANTS {{
-PIDFILE="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${SLOT}.pid"
+PIDFILE=$(pidfile "$SLOT")
 # https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
 SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
 SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
@@ -62,6 +76,7 @@ if test -t 1; then
         magenta="$(tput setaf 5)"
         cyan="$(tput setaf 6)"
         white="$(tput setaf 7)"
+        grey="$(tput setaf 8)"
     fi
 fi
 
@@ -86,7 +101,7 @@ trap handle_exit EXIT
 banner_pre() {
 	test "$BANNER_PRE_ENABLE" -eq "0" && return
 	bracket_color="${cyan}"
-	echo "${bracket_color}[[ ${normal}running ${CMD_NAME} at $(date +%X) ${bracket_color}]]${normal}"
+	echo "${bracket_color}[[ ${normal}${grey}running${normal} ${CMD_NAME} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
 }
 
 banner_post() {
@@ -99,7 +114,7 @@ banner_post() {
 		exit_code_color="${normal}"
 	fi
 	shell_integrations_prompt_start
-	echo "${bracket_color}[[ ${normal}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} at $(date +%X) ${bracket_color}]]${normal}"
+	echo "${bracket_color}[[ ${normal}${grey}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
@@ -129,6 +144,7 @@ if ! flock -n -x 17; then
     exit 1
 fi
 echo $$ > "$PIDFILE"
+test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
 
 sleep infinity &
 SLP_PID=$!
