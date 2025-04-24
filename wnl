@@ -20,6 +20,12 @@ CMD_NAME=$(echo "$1" | cut -f1 -d' ')
 
 RC_FILE="${RC_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}"
 
+
+load_rc_file() {
+	# shellcheck disable=SC1090
+	test -f "$RC_FILE" && source "$RC_FILE"
+}
+
 ### CONFIGURATION {{
 EXIT_AFTER_NONZERO=0
 SHELL_CMD="$SHELL -c"
@@ -28,13 +34,12 @@ HOOK_POST=
 BANNER_PRE_ENABLE=1
 BANNER_POST_ENABLE=1
 SHELL_INTEGRATION_ENABLE=1
-# load RC file
-# shellcheck disable=SC1090
-test -f "$RC_FILE" && source "$RC_FILE"
+load_rc_file
 ### }} CONFIGURATION
 
 ### CONSTANTS {{
 PIDFILE="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${SLOT}.pid"
+# https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
 SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
 SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
 ### }} CONSTANTS
@@ -117,7 +122,6 @@ shell_integrations_prompt_start() {
 }
 
 ## MAIN {{
-
 # make pidfile with locking
 exec 17>>"$PIDFILE"
 if ! flock -n -x 17; then
@@ -131,6 +135,8 @@ SLP_PID=$!
 SIGNAL_START=0
 SIGNAL_STOP=0
 while true; do 
+	# reload rc file every run
+	load_rc_file
 	# echo eval state begin: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
 	if [ "$SIGNAL_STOP" -eq "1" ]; then
 		# if RUNNING_CMD is defined and it's running, then kill it
@@ -181,5 +187,4 @@ while true; do
 		SLP_PID=$!
 	fi
 done
-
 ## }} MAIN

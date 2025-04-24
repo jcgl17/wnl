@@ -1,7 +1,7 @@
 # `wnl`—Wait 'n' Listen
 
-This is a tool to facilitate the ["Unix as IDE" concept](https://blog.sanctum.geek.nz/series/unix-as-ide/).
-It enables quick and easy execution of common tasks. For example, by binding those tasks to keyboard shortcuts.
+This is a tool to facilitate ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflows.
+It enables quick and easy execution of common tasks. It especially makes it easy to bind those tasks to keyboard shortcuts.
 
 If you have a command you want to be able to trigger again and again, preface the command with 'wnl':
 
@@ -52,6 +52,9 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 - [X] Pre- and post-exec hooks
 - [ ] Bash completion
 - [ ] Man page
+- [X] RPM packages
+- [ ] DEB packages
+- [ ] Arch package
 
 ## Additional features
 
