@@ -18,9 +18,19 @@ CMD="$*"
 CMD_NAME=$(echo "$1" | cut -f1 -d' ')
 ### }} ARG PARSING
 
+RC_FILE="${RC_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}"
+
 ### CONFIGURATION {{
-EXIT_AFTER_NONZERO="${EXIT_AFTER_NONZERO:-0}"
-SHELL_CMD="${SHELL_CMD:-"$SHELL -c"}"
+EXIT_AFTER_NONZERO=0
+SHELL_CMD="$SHELL -c"
+HOOK_PRE=
+HOOK_POST=
+BANNER_PRE_ENABLE=1
+BANNER_POST_ENABLE=1
+SHELL_INTEGRATION_ENABLE=1
+# load RC file
+# shellcheck disable=SC1090
+test -f "$RC_FILE" && source "$RC_FILE"
 ### }} CONFIGURATION
 
 ### CONSTANTS {{
@@ -28,14 +38,6 @@ PIDFILE="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${SLOT}.pid"
 SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
 SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
 ### }} CONSTANTS
-
-# make pidfile with locking
-exec 17>>"$PIDFILE"
-if ! flock -n -x 17; then
-    echo "Error: unable to acquire lock on $PIDFILE" >&2
-    exit 1
-fi
-echo $$ > "$PIDFILE"
 
 # define colors
 # https://unix.stackexchange.com/a/10065
@@ -76,7 +78,14 @@ trap handle_usr1 SIGUSR1
 trap handle_usr2 SIGUSR2
 trap handle_exit EXIT
 
-afterword() {
+banner_pre() {
+	test "$BANNER_PRE_ENABLE" -eq "0" && return
+	bracket_color="${cyan}"
+	echo "${bracket_color}[[ ${normal}running ${CMD_NAME} at $(date +%X) ${bracket_color}]]${normal}"
+}
+
+banner_post() {
+	test "$BANNER_POST_ENABLE" -eq "0" && return
 	if [ "$EXIT_CODE" -ne 0 ]; then
 		bracket_color="${red}"
 		exit_code_color="${red}${bold}"
@@ -84,17 +93,38 @@ afterword() {
 		bracket_color="${cyan}"
 		exit_code_color="${normal}"
 	fi
-	echo -ne "$SHELL_INTEGRATION_PROMPT_START"
+	shell_integrations_prompt_start
 	echo "${bracket_color}[[ ${normal}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} at $(date +%X) ${bracket_color}]]${normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
 }
 
-foreword() {
-	bracket_color="${cyan}"
-	echo "${bracket_color}[[ ${normal}running ${CMD_NAME} at $(date +%X) ${bracket_color}]]${normal}"
+hook_pre() {
+	test -n "$HOOK_PRE" && $SHELL_CMD "$HOOK_PRE"
 }
+
+hook_post() {
+	test -n "$HOOK_POST" && $SHELL_CMD "$HOOK_POST"
+}
+
+shell_integrations_cmd_start() {
+	test "$SHELL_INTEGRATION_ENABLE" -ne "0" && echo -ne "$SHELL_INTEGRATION_CMD_START"
+}
+
+shell_integrations_prompt_start() {
+	test "$SHELL_INTEGRATION_ENABLE" -ne "0" && echo -ne "$SHELL_INTEGRATION_PROMPT_START"
+}
+
+## MAIN {{
+
+# make pidfile with locking
+exec 17>>"$PIDFILE"
+if ! flock -n -x 17; then
+    echo "Error: unable to acquire lock on $PIDFILE" >&2
+    exit 1
+fi
+echo $$ > "$PIDFILE"
 
 sleep infinity &
 SLP_PID=$!
@@ -113,16 +143,19 @@ while true; do
 				kill -INT "$SHELL_CHILD"
 			fi
 			wait -n "$RUNNING_CMD"
-			EXIT_CODE=$?
+			# export EXIT_CODE for consumption by hook
+			export EXIT_CODE=$?
 			if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
-				afterword
+				banner_post
+				hook_post
 			fi
 		fi
 	elif [ "$SIGNAL_START" -eq 1 ]; then
 		# if RUNNING_CMD is not defined or it's not running, then start it
 		if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
-			foreword
-			echo -ne "$SHELL_INTEGRATION_CMD_START"
+			banner_pre
+			hook_pre
+			shell_integrations_cmd_start
 			$SHELL_CMD "$CMD" >&1 2>&2 &
 			RUNNING_CMD=$!
 		fi
@@ -132,10 +165,12 @@ while true; do
 	# echo eval state end: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
 	if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
 		wait -n "$RUNNING_CMD"
-		EXIT_CODE=$?
+		# export EXIT_CODE for consumption by hook
+		export EXIT_CODE=$?
 		# only summarize if RUNNING_CMD is done, i.e. that the wait wasn't just interrupted to handle a signal
 		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
-			afterword
+			banner_post
+			hook_post
 		fi
 	else
 		wait
@@ -146,3 +181,5 @@ while true; do
 		SLP_PID=$!
 	fi
 done
+
+## }} MAIN

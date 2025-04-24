@@ -43,12 +43,13 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 
 - [X] Multiple instances ("slots")
 - [X] Allow sending SIGINT to command invocations
-- [ ] Richer functionality
-  - [ ] Redesign to use named pipes instead of signals for IPC
-  - [ ] Allow sending custom signals (e.g. SIGTERM) to command invocations
-  - [ ] Allow sending text to command invocations' `stdin`
+- [ ] Richer controls from `wnlctl`
+  - [ ] Named pipes instead of signals for IPC
+  - [ ] Custom signals (e.g. SIGTERM) to command invocations
+  - [ ] Text to command invocations' `stdin`
 - [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command invocations
-- [ ] Add config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command invocation finishes
+- [X] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command invocation finishes
+- [X] Pre- and post-exec hooks
 
 ## Additional features
 
