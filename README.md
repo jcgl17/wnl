@@ -89,3 +89,9 @@ That typical Unix-as-IDE approach has the virtues of being both simple and easil
 it's easy to understand, and it's trivial to modify your command lines as your needs, languages, and toolchains change.
 
 However, it lacks the extremely rapid feedback loops and reduced mental overhead that you get with IDEs' keyboard shortcuts.
+
+## Other Unix-as-IDE tools
+
+- [`entr`](https://eradman.com/entrproject/):  run arbitrary commands when files change
+  This will do much of what `wnl` does, but automatically, based on file changes.
+  Good if your tasks are suitable for automatic execution.
