@@ -11,6 +11,8 @@ EXIT_AFTER_NONZERO=0
 SHELL_CMD="$SHELL -c"
 HOOK_PRE=
 HOOK_POST=
+HOOK_STARTUP=
+HOOK_EXIT=
 BANNER_PRE_ENABLE=1
 BANNER_POST_ENABLE=1
 SHELL_INTEGRATION_ENABLE=1
@@ -44,6 +46,7 @@ else
 		exit 1
 	fi
 fi
+export SLOT
 
 CMD="$*"
 # cut is needed--the user may have quoted their CMD.
@@ -92,11 +95,8 @@ handle_exit() {
 	# echo removing pidfile
 	rm -f "$PIDFILE"
 	kill "$SLP_PID"
+	hook_exit
 }
-
-trap handle_usr1 SIGUSR1
-trap handle_usr2 SIGUSR2
-trap handle_exit EXIT
 
 banner_pre() {
 	test "$BANNER_PRE_ENABLE" -eq "0" && return
@@ -128,6 +128,14 @@ hook_post() {
 	test -n "$HOOK_POST" && $SHELL_CMD "$HOOK_POST"
 }
 
+hook_startup() {
+	test -n "$HOOK_STARTUP" && $SHELL_CMD "$HOOK_STARTUP"
+}
+
+hook_exit() {
+	test -n "$HOOK_EXIT" && $SHELL_CMD "$HOOK_EXIT"
+}
+
 shell_integrations_cmd_start() {
 	test "$SHELL_INTEGRATION_ENABLE" -ne "0" && echo -ne "$SHELL_INTEGRATION_CMD_START"
 }
@@ -138,7 +146,7 @@ shell_integrations_prompt_start() {
 
 ## MAIN {{
 # make pidfile with locking
-exec 17>>"$PIDFILE"
+exec 17<>"$PIDFILE"
 if ! flock -n -x 17; then
     echo "Error: unable to acquire lock on $PIDFILE" >&2
     exit 1
@@ -146,10 +154,15 @@ fi
 echo $$ > "$PIDFILE"
 test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
 
+trap handle_usr1 SIGUSR1
+trap handle_usr2 SIGUSR2
+trap handle_exit EXIT
+
 sleep infinity &
 SLP_PID=$!
 SIGNAL_START=0
 SIGNAL_STOP=0
+hook_startup
 while true; do 
 	# reload rc file every run
 	load_rc_file
