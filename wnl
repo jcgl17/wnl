@@ -16,7 +16,8 @@ HOOK_EXIT=
 BANNER_PRE_ENABLE=1
 BANNER_POST_ENABLE=1
 SHELL_INTEGRATION_ENABLE=1
-MAXSLOT=10
+AUTOSLOT_MAX=10
+CMD_TITLE_MAXLENGTH=40
 load_rc_file
 ### }} CONFIGURATION
 
@@ -35,7 +36,7 @@ if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
 else
 	# otherwise, find the first available slot
 	AUTOSLOT=1
-	for ((i=1; i <= "$MAXSLOT"; i++)); do
+	for ((i=1; i <= "$AUTOSLOT_MAX"; i++)); do
 		if [ ! -f "$(pidfile $i)" ]; then
 			SLOT=$i
 			break
@@ -51,7 +52,14 @@ export SLOT
 CMD="$*"
 # cut is needed--the user may have quoted their CMD.
 # that makes the entire CMD as $1--not just its first space-delimited word
-CMD_NAME=$(echo "$1" | cut -f1 -d' ')
+excess_title_length="$(("${#CMD}" - "${CMD_TITLE_MAXLENGTH}"))"
+if [ "${excess_title_length}" -gt "1" ]; then
+	trim_head="${CMD:0:$(("$CMD_TITLE_MAXLENGTH"/2))}"
+	trim_tail="${CMD:$(("${#CMD}"-("$CMD_TITLE_MAXLENGTH"/2))):"${#CMD}"}"
+	CMD_TITLE="${trim_head}…${trim_tail}"
+else
+	CMD_TITLE="$CMD"
+fi
 ### }} ARG PARSING
 
 ### CONSTANTS {{
@@ -101,7 +109,7 @@ handle_exit() {
 banner_pre() {
 	test "$BANNER_PRE_ENABLE" -eq "0" && return
 	bracket_color="${cyan}"
-	echo "${bracket_color}[[ ${normal}${grey}running${normal} ${CMD_NAME} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
+	echo "${bracket_color}[[ ${normal}${grey}running${normal} ${CMD_TITLE} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
 }
 
 banner_post() {
