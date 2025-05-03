@@ -122,7 +122,7 @@ banner_post() {
 		exit_code_color="${normal}"
 	fi
 	shell_integrations_prompt_start
-	echo "${bracket_color}[[ ${normal}${grey}finished with exit code ${exit_code_color}${EXIT_CODE}${normal} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
+	echo "${bracket_color}[[ ${normal}${grey}finished ${normal}${CMD_TITLE}${grey} with exit code ${exit_code_color}${EXIT_CODE}${normal} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
