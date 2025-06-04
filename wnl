@@ -49,7 +49,10 @@ else
 fi
 export SLOT
 
-CMD="$*"
+# escape command to preserve user-provided as faithfully as possible
+CMD=$(printf "%q " "$@")
+# remove trailing space
+CMD="${CMD%" "}"
 # cut is needed--the user may have quoted their CMD.
 # that makes the entire CMD as $1--not just its first space-delimited word
 excess_title_length="$(("${#CMD}" - "${CMD_TITLE_MAXLENGTH}"))"
@@ -199,7 +202,7 @@ while true; do
 			banner_pre
 			hook_pre
 			shell_integrations_cmd_start
-			$SHELL_CMD "$CMD" >&1 2>&2 &
+			$SHELL_CMD "${CMD}" >&1 2>&2 &
 			RUNNING_CMD=$!
 		fi
 	fi
