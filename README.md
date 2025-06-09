@@ -30,6 +30,24 @@ done
 [[ finished with exit code 0 at 13:08:17 ]]
 ```
 
+<!-- mtoc-start -->
+
+- [Installation](#installation)
+  - [Manual](#manual)
+  - [Packages](#packages)
+- [Roadmap](#roadmap)
+- [Features](#features)
+  - [Multiple instances—slots](#multiple-instancesslots)
+  - [Stopping program execution](#stopping-program-execution)
+  - [User configuration](#user-configuration)
+- [The problem space](#the-problem-space)
+- [Example scenarios](#example-scenarios)
+  - [Application deployment](#application-deployment)
+  - [Applying configuration management](#applying-configuration-management)
+- [Other Unix-as-IDE tools](#other-unix-as-ide-tools)
+
+<!-- mtoc-end -->
+
 ## Installation
 
 ### Manual
