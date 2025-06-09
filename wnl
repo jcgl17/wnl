@@ -17,7 +17,6 @@ BANNER_PRE_ENABLE=1
 BANNER_POST_ENABLE=1
 SHELL_INTEGRATION_ENABLE=1
 AUTOSLOT_MAX=10
-CMD_TITLE_MAXLENGTH=40
 load_rc_file
 ### }} CONFIGURATION
 
@@ -51,18 +50,9 @@ export SLOT
 
 # escape command to preserve user-provided as faithfully as possible
 CMD=$(printf "%q " "$@")
+CMD_RAW="$*"
 # remove trailing space
 CMD="${CMD%" "}"
-# cut is needed--the user may have quoted their CMD.
-# that makes the entire CMD as $1--not just its first space-delimited word
-excess_title_length="$(("${#CMD}" - "${CMD_TITLE_MAXLENGTH}"))"
-if [ "${excess_title_length}" -gt "1" ]; then
-	trim_head="${CMD:0:$(("$CMD_TITLE_MAXLENGTH"/2))}"
-	trim_tail="${CMD:$(("${#CMD}"-("$CMD_TITLE_MAXLENGTH"/2))):"${#CMD}"}"
-	CMD_TITLE="${trim_head}…${trim_tail}"
-else
-	CMD_TITLE="$CMD"
-fi
 ### }} ARG PARSING
 
 ### CONSTANTS {{
@@ -112,7 +102,7 @@ handle_exit() {
 banner_pre() {
 	test "$BANNER_PRE_ENABLE" -eq "0" && return
 	bracket_color="${cyan}"
-	echo "${bracket_color}[[ ${normal}${grey}running${normal} ${CMD_TITLE} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
+	echo "${bracket_color}[[ ${normal}${grey}running${normal} $(cmd_title) ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
 }
 
 banner_post() {
@@ -125,7 +115,7 @@ banner_post() {
 		exit_code_color="${normal}"
 	fi
 	shell_integrations_prompt_start
-	echo "${bracket_color}[[ ${normal}${grey}finished ${normal}${CMD_TITLE}${grey} with exit code ${exit_code_color}${EXIT_CODE}${normal} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
+	echo "${bracket_color}[[ ${normal}${grey}finished ${normal}$(cmd_title)${grey} with exit code ${exit_code_color}${EXIT_CODE}${normal} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
@@ -153,6 +143,32 @@ shell_integrations_cmd_start() {
 
 shell_integrations_prompt_start() {
 	test "$SHELL_INTEGRATION_ENABLE" -ne "0" && echo -ne "$SHELL_INTEGRATION_PROMPT_START"
+}
+
+cmd_title() {
+	# 56 is roughly the width of the banner_post (which in longer than banner_pre), minus CMD_TITLE
+	CMD_TITLE_MAXLENGTH=$(("$(tput cols)" - 56))
+	excess_title_length="$(("${#CMD_RAW}" - "${CMD_TITLE_MAXLENGTH}"))"
+	if [ "${excess_title_length}" -gt "1" ]; then
+		trim_head="${CMD_RAW:0:$(("$CMD_TITLE_MAXLENGTH"/2))}"
+		trim_tail="${CMD_RAW:$(("${#CMD}"-("$CMD_TITLE_MAXLENGTH"/2))):"${#CMD}"}"
+			CMD_TITLE="${trim_head}…${trim_tail}"
+		else
+			CMD_TITLE="$CMD_RAW"
+	fi
+	echo "$CMD_TITLE"
+}
+
+# kill_signal heuristically decides what signal should be sent to kill SHELL_CHILD
+kill_signal() {
+	cmd=$1
+	if [[ "$cmd" =~ ^[a-zA-Z]*sh\ -c ]]; then
+		echo TERM
+	elif [[ "$cmd" =~ ^make\  ]]; then
+		echo TERM
+	else
+		echo INT
+	fi
 }
 
 ## MAIN {{
@@ -186,7 +202,7 @@ while true; do
 			# kill -INT "$RUNNING_CMD"
 			SHELL_CHILD=$(pgrep -P "$RUNNING_CMD")
 			if [ -n "$SHELL_CHILD" ]; then
-				kill -INT "$SHELL_CHILD"
+				kill -"$(kill_signal "$CMD_RAW")" "$SHELL_CHILD"
 			fi
 			wait -n "$RUNNING_CMD"
 			# export EXIT_CODE for consumption by hook
