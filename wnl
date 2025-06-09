@@ -68,19 +68,19 @@ if test -t 1; then
     # see if it supports colors...
     ncolors=$(tput colors)
     if test -n "$ncolors" && test "$ncolors" -ge 8; then
-        bold="$(tput bold)"
-        underline="$(tput smul)"
-        standout="$(tput smso)"
-        normal="$(tput sgr0)"
-        black="$(tput setaf 0)"
-        red="$(tput setaf 1)"
-        green="$(tput setaf 2)"
-        yellow="$(tput setaf 3)"
-        blue="$(tput setaf 4)"
-        magenta="$(tput setaf 5)"
-        cyan="$(tput setaf 6)"
-        white="$(tput setaf 7)"
-        grey="$(tput setaf 8)"
+        FMT_BOLD="$(tput bold)"; export FMT_BOLD
+        FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
+        FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
+        FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
+        FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
+        FMT_RED="$(tput setaf 1)"; export FMT_RED
+        FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
+        FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
+        FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
+        FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
+        FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
+        FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
+        FMT_GREY="$(tput setaf 8)"; export FMT_GREY
     fi
 fi
 
@@ -101,21 +101,21 @@ handle_exit() {
 
 banner_pre() {
 	test "$BANNER_PRE_ENABLE" -eq "0" && return
-	bracket_color="${cyan}"
-	echo "${bracket_color}[[ ${normal}${grey}running${normal} $(cmd_title) ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
+	bracket_color="${FMT_CYAN}"
+	echo "${bracket_color}[[ ${FMT_NORMAL}${FMT_GREY}running${FMT_NORMAL} $(cmd_title) ${FMT_GREY}at${FMT_NORMAL} $(date +%X) ${FMT_GREY}in slot${FMT_NORMAL} $SLOT ${bracket_color}]]${FMT_NORMAL}"
 }
 
 banner_post() {
 	test "$BANNER_POST_ENABLE" -eq "0" && return
 	if [ "$EXIT_CODE" -ne 0 ]; then
-		bracket_color="${red}"
-		exit_code_color="${red}${bold}"
+		bracket_color="${FMT_RED}"
+		exit_code_color="${FMT_RED}${FMT_BOLD}"
 	else
-		bracket_color="${cyan}"
-		exit_code_color="${normal}"
+		bracket_color="${FMT_CYAN}"
+		exit_code_color="${FMT_NORMAL}"
 	fi
 	shell_integrations_prompt_start
-	echo "${bracket_color}[[ ${normal}${grey}finished ${normal}$(cmd_title)${grey} with exit code ${exit_code_color}${EXIT_CODE}${normal} ${grey}at${normal} $(date +%X) ${grey}in slot${normal} $SLOT ${bracket_color}]]${normal}"
+	echo "${bracket_color}[[ ${FMT_NORMAL}${FMT_GREY}finished ${FMT_NORMAL}$(cmd_title)${FMT_GREY} with exit code ${exit_code_color}${EXIT_CODE}${FMT_NORMAL} ${FMT_GREY}at${FMT_NORMAL} $(date +%X) ${FMT_GREY}in slot${FMT_NORMAL} $SLOT ${bracket_color}]]${FMT_NORMAL}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi

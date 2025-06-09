@@ -1,7 +1,10 @@
 # `wnl`—Wait 'n' Listen
 
 This is a tool to facilitate ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflows.
-It enables quick and easy execution of common tasks. It especially makes it easy to bind those tasks to keyboard shortcuts.
+It enables easy execution/automation of ad-hoc tasks. For example, you can bind those tasks to keyboard shortcuts.
+
+**Note:** wnl does not manage keyboard shortcuts;
+you yourself must bind shortcuts to `wnlctl` within your Desktop Environment or similar.
 
 If you have a command you want to be able to trigger again and again, preface the command with 'wnl':
 
@@ -41,39 +44,66 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 
 ## Roadmap
 
-- [X] Multiple instances ("slots")
-  - [X] Automatically use first available slot if slot ID not specified
-- [X] Allow sending SIGINT to command executions
+- [x] Multiple instances ("slots")
+  - [x] Automatically use first available slot if slot ID not specified
+- [x] Allow sending SIGINT to command executions
 - [ ] Richer controls from `wnlctl`
   - [ ] Named pipes instead of signals for IPC
   - [ ] Custom signals (e.g. SIGTERM) to command executions
   - [ ] Text to command executions' `stdin`
-- [X] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
-- [X] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
-- [X] Pre- and post-exec hooks
+- [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
+- [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
+- [x] Pre- and post-exec hooks
 - [ ] Bash completion
 - [ ] Man page
-- [X] RPM packages
+- [x] RPM packages
 - [ ] DEB packages
 - [ ] Arch package
 
-## Additional features
+## Features
 
-### Multiple instances
+### Multiple instances—slots
 
-To run multiple `wnl` instances, you can run `wnl SLOT_ID COMMAND`, where `SLOT_ID` is a number. `SLOT_ID` defaults to 1 for easy use, so you only need to specify `SLOT_ID` when you start using more than one instance of `wnl` at a time.
+To run multiple instances, wnl has a feature called "slots".
+You can run `wnl $SLOT_ID COMMAND`, where `$SLOT_ID` is a number.
+If you do not specify `$SLOT_ID`, then wnl will use the next available slot ID, counting up from 1.
 
-Correspondingly, call `wnlctl SLOT_ID` to signal the `wnl` instance with that SLOT_ID.
+Correspondingly, call `wnlctl $SLOT_ID` to signal the `wnl` instance with that SLOT_ID.
+`wnlctl` default to `1` for `SLOT_ID` if not specified.
 
-### Killing program execution
+### Stopping program execution
 
-Not only can `wnl` start command execution, but it can also end it.
+Call `SIGNAL=USR2 wnlctl $SLOT_ID` to kill the command running in wnl (SIGINT is sent).
+If wnl is not currently running the command, then no action is taken.
 
-Call `SIGNAL=USR2 wnlctl` to kill the command running in `wnl` (SIGINT is sent).
+### User configuration
+
+Behavior can be customized using a file at `~/.config/wnl/wnlrc`.
+Right now, hooks are the main reason to customize your configuration.
+These are simply shell snippets that get run by your shell (`$SHELL`).
+There are four hooks:
+
+| Name           | Description                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `HOOK_PRE`     | Every time wnl is triggered with `wnlctl`, this snippet is run _before_ executing the command given to `wnl` |
+| `HOOK_POST`    | Every time wnl is triggered with `wnlctl`, this snippet is run _after_ executing the command given to `wnl`  |
+| `HOOK_STARTUP` | This snippet is run when `wnl` is started                                                                    |
+| `HOOK_EXIT`    | This snippet is run when `wnl` is exited (e.g. with `Ctrl-c`)                                                |
+
+A simple example of a `wnlrc`:
+
+```bash
+# Play a gentle tone whenever wnl is triggered
+HOOK_PRE='pw-play /usr/share/sounds/ocean/stereo/service-logout.oga &'
+# Play a an alert whenever the command run by wnl fails with a nonzero exit code
+HOOK_POST='test "$EXIT_CODE" -eq 0 || pw-play /usr/share/sounds/oxygen/stereo/message-connectivity-error.ogg &'
+HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thank you for using wnl!; echo "$FMT_NORMAL"'
+```
 
 ## The problem space
 
 In both IDEs and Unix-as-IDE, you need to execute various tasks besides editing source code:
+
 - run tests
 - build executables
 - push code
@@ -90,8 +120,38 @@ it's easy to understand, and it's trivial to modify your command lines as your n
 
 However, it lacks the extremely rapid feedback loops and reduced mental overhead that you get with IDEs' keyboard shortcuts.
 
+## Example scenarios
+
+### Application deployment
+
+You are writing an application and want to frequently deploy from your workstation to a test environment.
+Deployment isn't super fast and cheap, so it doesn't make sense to trigger a deploy whenever you save in your editor.
+Normally, you work in your text editor, and then periodically switch to a shell and deploy with `make deploy`.
+
+To set up wnl, you bind `wnlctl` to `Ctrl-F1`, and `SIGNAL=USR2 wnlctl` to `Ctrl-Super-F1` in your Desktop Environment.
+Then, when you start to work on your application, you run `wnl make deploy` in a shell.
+At any point, you can hit `Ctrl-F1` to run your deployment, and `Ctrl-Super-F1` to abort the deployment.
+
+### Applying configuration management
+
+You're writing some config management code like Ansible or Terraform/[OpenTofu](https://opentofu.org/).
+Frequently, you run `terraform apply`.
+Sometimes, you also run a diagnostic like `curl -ik https://dev.example.com/api/healthz`.
+
+With wnl, you'd use your Desktop Environment to set up shortcuts for a couple different slots:
+
+| Shortcut      | Command                | Description                                 |
+| ------------- | ---------------------- | ------------------------------------------- |
+| Ctrl-F1       | `wnlctl 1`             | Runs the commmand in slot 1                 |
+| Ctrl-Super-F1 | `SIGNAL=USR2 wnlctl 1` | Stops the command in slot 1 if it's running |
+| Ctrl-F2       | `wnlctl 2`             | Runs the commmand in slot 2                 |
+| Ctrl-Super-F2 | `SIGNAL=USR2 wnlctl 2` | Stops the command in slot 2 if it's running |
+
+You then run `wnl 1 terraform apply -auto-approve` in one shell, and `wnl 2 curl http://…` in another.
+You can then use the configured keyboard shortcuts to trigger terraform and curl without ever leaving your editor or breaking your focus.
+
 ## Other Unix-as-IDE tools
 
-- [`entr`](https://eradman.com/entrproject/):  run arbitrary commands when files change
-  This will do much of what `wnl` does, but automatically, based on file changes.
+- [`entr`](https://eradman.com/entrproject/): run arbitrary commands when files change
+  This will do much of what wnl does, but automatically, based on file changes.
   Good if your tasks are suitable for automatic execution.
