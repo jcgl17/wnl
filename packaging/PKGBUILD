@@ -1,0 +1,14 @@
+pkgname=wnl
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line."
+arch=('any')
+license=('GPL-3.0-or-later')
+source=("${pkgname}-${pkgver}.tar.gz")
+url="https://codeberg.org/jcgl/wnl"
+sha256sums=('SKIP')
+
+package() {
+    install -Dm755 "${srcdir}/${pkgname}-${pkgver}/wnl" "${pkgdir}/usr/bin/wnl"
+    install -Dm755 "${srcdir}/${pkgname}-${pkgver}/wnlctl" "${pkgdir}/usr/bin/wnlctl"
+}
