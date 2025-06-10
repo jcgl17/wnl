@@ -1,14 +1,16 @@
 # `wnl`—Wait 'n' Listen
 
-This is a tool to facilitate ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflows.
+This tool facilitates ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflows.
 It enables easy execution/automation of ad-hoc tasks. For example, you can bind those tasks to keyboard shortcuts.
-
-**Note:** wnl does not manage keyboard shortcuts;
-you yourself must bind shortcuts to `wnlctl` within your Desktop Environment or similar.
 
 If you have a command you want to be able to trigger again and again, preface the command with 'wnl':
 
 [![asciicast](https://asciinema.org/a/716085.svg)](https://asciinema.org/a/716085)
+
+<!-- markdownlint-disable no-inline-html -->
+<details>
+
+<summary>plaintext demo</summary>
 
 ```console
 # you frequently run this command,
@@ -30,16 +32,21 @@ done
 [[ finished with exit code 0 at 13:08:17 ]]
 ```
 
+</details>
+<!-- markdownlint-enable no-inline-html -->
+
+## Contents
+
 <!-- mtoc-start -->
 
 - [Installation](#installation)
   - [Manual](#manual)
   - [Packages](#packages)
-- [Roadmap](#roadmap)
 - [Features](#features)
   - [Multiple instances—slots](#multiple-instancesslots)
   - [Stopping program execution](#stopping-program-execution)
   - [User configuration](#user-configuration)
+- [Roadmap](#roadmap)
 - [The problem space](#the-problem-space)
 - [Example scenarios](#example-scenarios)
   - [Application deployment](#application-deployment)
@@ -60,30 +67,12 @@ I'm working on building packages for various distros, but only have RPM packages
 
 Download the packages or add the openSUSE Build Service repository [here](https://software.opensuse.org//download.html?project=home%3Ajcgl&package=wnl).
 
-## Roadmap
-
-- [x] Multiple instances ("slots")
-  - [x] Automatically use first available slot if slot ID not specified
-- [x] Allow sending SIGINT to command executions
-- [ ] Richer controls from `wnlctl`
-  - [ ] Named pipes instead of signals for IPC
-  - [ ] Custom signals (e.g. SIGTERM) to command executions
-  - [ ] Text to command executions' `stdin`
-- [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
-- [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
-- [x] Pre- and post-exec hooks
-- [ ] Bash completion
-- [ ] Man page
-- [x] RPM packages
-- [ ] DEB packages
-- [ ] Arch package
-
 ## Features
 
 ### Multiple instances—slots
 
 To run multiple instances, wnl has a feature called "slots".
-You can run `wnl $SLOT_ID COMMAND`, where `$SLOT_ID` is a number.
+You can run `wnl $SLOT_ID $COMMAND`, where `$SLOT_ID` is a number.
 If you do not specify `$SLOT_ID`, then wnl will use the next available slot ID, counting up from 1.
 
 Correspondingly, call `wnlctl $SLOT_ID` to signal the `wnl` instance with that SLOT_ID.
@@ -115,8 +104,27 @@ A simple example of a `wnlrc`:
 HOOK_PRE='pw-play /usr/share/sounds/ocean/stereo/service-logout.oga &'
 # Play a an alert whenever the command run by wnl fails with a nonzero exit code
 HOOK_POST='test "$EXIT_CODE" -eq 0 || pw-play /usr/share/sounds/oxygen/stereo/message-connectivity-error.ogg &'
+# ANSI color/formatting codes are available in $FMT_* variables
 HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thank you for using wnl!; echo "$FMT_NORMAL"'
 ```
+
+## Roadmap
+
+- [x] Multiple instances ("slots")
+  - [x] Automatically use first available slot if slot ID not specified
+- [x] Allow sending SIGINT to command executions
+- [ ] Richer controls from `wnlctl`
+  - [ ] Named pipes instead of signals for IPC
+  - [ ] Custom signals (e.g. SIGTERM) to command executions
+  - [ ] Text to command executions' `stdin`
+- [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
+- [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
+- [x] Pre- and post-exec hooks
+- [ ] Bash completion
+- [ ] Man page
+- [x] RPM packages
+- [ ] DEB packages
+- [ ] Arch package
 
 ## The problem space
 
@@ -143,7 +151,7 @@ However, it lacks the extremely rapid feedback loops and reduced mental overhead
 ### Application deployment
 
 You are writing an application and want to frequently deploy from your workstation to a test environment.
-Deployment isn't super fast and cheap, so it doesn't make sense to trigger a deploy whenever you save in your editor.
+Deployment isn't sufficiently fast/cheap/safe, so it doesn't make sense to trigger a deploy whenever you save in your editor.
 Normally, you work in your text editor, and then periodically switch to a shell and deploy with `make deploy`.
 
 To set up wnl, you bind `wnlctl` to `Ctrl-F1`, and `SIGNAL=USR2 wnlctl` to `Ctrl-Super-F1` in your Desktop Environment.
@@ -152,20 +160,20 @@ At any point, you can hit `Ctrl-F1` to run your deployment, and `Ctrl-Super-F1` 
 
 ### Applying configuration management
 
-You're writing some config management code like Ansible or Terraform/[OpenTofu](https://opentofu.org/).
-Frequently, you run `terraform apply`.
-Sometimes, you also run a diagnostic like `curl -ik https://dev.example.com/api/healthz`.
+You're writing some config management code like Ansible or Terraform/OpenTofu.
+Frequently, you run `terraform apply -auto-approve`.
+Sometimes, you also run a diagnostic like `curl https://dev.example.com/api/healthz -ik`.
 
 With wnl, you'd use your Desktop Environment to set up shortcuts for a couple different slots:
 
-| Shortcut      | Command                | Description                                 |
-| ------------- | ---------------------- | ------------------------------------------- |
-| Ctrl-F1       | `wnlctl 1`             | Runs the commmand in slot 1                 |
-| Ctrl-Super-F1 | `SIGNAL=USR2 wnlctl 1` | Stops the command in slot 1 if it's running |
-| Ctrl-F2       | `wnlctl 2`             | Runs the commmand in slot 2                 |
-| Ctrl-Super-F2 | `SIGNAL=USR2 wnlctl 2` | Stops the command in slot 2 if it's running |
+| Shortcut      | Command                | Description                                             |
+| ------------- | ---------------------- | ------------------------------------------------------- |
+| Ctrl-F1       | `wnlctl 1`             | Runs the commmand in slot 1 if it's not already running |
+| Ctrl-Super-F1 | `SIGNAL=USR2 wnlctl 1` | Stops the command in slot 1 if it's running             |
+| Ctrl-F2       | `wnlctl 2`             | Runs the commmand in slot 2 if it's not already running |
+| Ctrl-Super-F2 | `SIGNAL=USR2 wnlctl 2` | Stops the command in slot 2 if it's running             |
 
-You then run `wnl 1 terraform apply -auto-approve` in one shell, and `wnl 2 curl http://…` in another.
+You then run `wnl 1 terraform apply -auto-approve` in one shell, and `wnl 2 curl https://…` in another.
 You can then use the configured keyboard shortcuts to trigger terraform and curl without ever leaving your editor or breaking your focus.
 
 ## Other Unix-as-IDE tools
