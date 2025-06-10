@@ -1,0 +1,13 @@
+Source: wnl
+Section: utils
+Priority: optional
+Maintainer: jcgl <j@cgl.sh>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 4.5.0
+Homepage: https://codeberg.org/jcgl/wnl
+
+Package: wnl
+Architecture: any
+Depends:
+Description: Tools to manage a command line from afar
+ Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line.
