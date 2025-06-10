@@ -1,0 +1,2 @@
+complete --command wnlctl --no-files --argument '(for f in $XDG_RUNTIME_DIR/wnl_slot_*.pid; set mtch (string match --regex ".*wnl_slot_(\d+).pid" $f); set pid (fuser $f 2> /dev/null | string split " " --no-empty)[1]; set cmdline (cat /proc/$pid/cmdline | string split0)[3..]; if string match --regex --quiet "^\d+\$" $cmdline[1]; set cmdline $cmdline[2..]; end; if test -n $mtch[2]; echo $mtch[2]\twnl: (string join " " $cmdline); end; end)' --condition "__fish_is_first_arg"
+complete --command wnlctl --no-files

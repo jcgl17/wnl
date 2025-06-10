@@ -120,7 +120,9 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thank you for using wnl!; echo "$F
 - [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
 - [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
 - [x] Pre- and post-exec hooks
-- [ ] Bash completion
+- [ ] Shell completion
+  - [ ] Bash
+  - [x] Fish
 - [ ] Man page
 - [x] RPM packages
 - [ ] DEB packages

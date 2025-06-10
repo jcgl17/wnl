@@ -23,10 +23,14 @@ Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-styl
 rm -rf %{buildroot}
 install -d %{buildroot}%{_bindir}
 install -m 0755 wnl wnlctl %{buildroot}%{_bindir}/
+install -d %{buildroot}%{_datadir}/fish/vendor_completions.d
+install -m 0755 completions/*.fish    %{buildroot}%{_datadir}/fish/vendor_completions.d/
 
 %files
 %{_bindir}/wnl
 %{_bindir}/wnlctl
+%{_datadir}/fish/vendor_completions.d/wnl.fish
+%{_datadir}/fish/vendor_completions.d/wnlctl.fish
 
 %changelog
 * Wed Apr 16 2025 j <j@cgl.sh> - 0.1.0-1

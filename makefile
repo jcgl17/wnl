@@ -1,5 +1,5 @@
 NAME    := wnl
-SPECFILE := wnl.spec
+SPECFILE := packaging/wnl.spec
 
 VERSION := $(shell git describe --tags --match "v*" --abbrev=0 | sed 's/^v//')
 RELEASE := 1
@@ -14,6 +14,8 @@ RPM_NAME := $(shell rpmspec \
 			--queryformat '%{name}-%{version}-%{release}.%{arch}.rpm' \
 			)
 
+DEPS := wnl wnlctl completions/*
+
 RPMBUILD_TOPDIR ?= $(HOME)/rpmbuild
 SOURCES         := $(RPMBUILD_TOPDIR)/SOURCES
 BUILD_DIR       := $(RPMBUILD_TOPDIR)/BUILD
@@ -26,10 +28,10 @@ all: rpm
 
 prepare: $(SOURCES)/$(NAME)-$(VERSION).tar.gz
 
-$(SOURCES)/$(NAME)-$(VERSION).tar.gz:
+$(SOURCES)/$(NAME)-$(VERSION).tar.gz: $(DEPS)
 	@echo "==> [prepare] creating $@ from git tag v$(VERSION)"
-	@mkdir -p $(SOURCES)
-	@git archive \
+	mkdir -p $(SOURCES)
+	git archive \
 		--format=tar.gz \
 		--prefix=$(NAME)-$(VERSION)/ \
 		v$(VERSION) \
