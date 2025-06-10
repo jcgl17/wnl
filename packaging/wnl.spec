@@ -11,7 +11,7 @@ BuildArch:      noarch
 Source0:        %{name}-%{version}.tar.gz
 
 %description
-Tools to make global shortcuts for Up+Enter in your shell
+Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line.
 
 %prep
 %setup -q
