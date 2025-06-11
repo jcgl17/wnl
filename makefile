@@ -1,7 +1,7 @@
 NAME    := wnl
-SPECFILE := packaging/wnl.spec
+SPECFILE := packaging/rpm/wnl.spec
 
-VERSION := $(shell git describe --tags --match "v*" --abbrev=0 | sed 's/^v//')
+VERSION ?= $(shell git describe --tags --always --dirty | tr '-' '+' | sed 's/^v//')
 RELEASE := 1
 
 RPM_DIST := $(shell rpm --eval '%{?dist}')
@@ -22,7 +22,7 @@ BUILD_DIR       := $(RPMBUILD_TOPDIR)/BUILD
 RPMS_DIR        := $(RPMBUILD_TOPDIR)/RPMS/noarch
 RPM_OUT         := $(RPMS_DIR)/$(RPM_NAME)
 
-.PHONY: all prepare rpm clean
+.PHONY: all prepare rpm clean install
 
 all: rpm
 
@@ -34,7 +34,7 @@ $(SOURCES)/$(NAME)-$(VERSION).tar.gz: $(DEPS)
 	git archive \
 		--format=tar.gz \
 		--prefix=$(NAME)-$(VERSION)/ \
-		v$(VERSION) \
+		HEAD \
 	> $@
 
 rpm: prepare $(SPECFILE)
@@ -50,3 +50,18 @@ clean:
 	rm -vf $(SOURCES)/$(NAME)-$(VERSION).tar.gz
 	rm -vrf $(BUILD_DIR)/$(NAME)-*
 	rm -vf $(RPM_OUT)
+
+ifdef PACKAGE
+BIN_DIR := /usr/bin
+COMPLETION_DIR_BASH := /usr/share/bash-completion/completions
+else
+BIN_DIR := /usr/local/bin
+COMPLETION_DIR_BASH := /usr/local/share/bash-completion/completions
+endif
+COMPLETION_DIR_FISH := /usr/share/fish/vendor_completions.d
+
+install:
+	install -vDm 0755 wnl wnlctl -t $(DESTDIR)$(BIN_DIR)
+	install -vDm 0644 completions/*.fish -t $(DESTDIR)$(COMPLETION_DIR_FISH)
+	install -vDm 0644 completions/wnl.bash $(DESTDIR)$(COMPLETION_DIR_BASH)/wnl
+	install -vDm 0644 completions/wnlctl.bash $(DESTDIR)$(COMPLETION_DIR_BASH)/wnlctl

@@ -41,6 +41,7 @@ done
 
 - [Installation](#installation)
   - [Manual](#manual)
+    - [Dependencies](#dependencies)
   - [Packages](#packages)
 - [Features](#features)
   - [Multiple instances—slots](#multiple-instancesslots)
@@ -61,13 +62,27 @@ done
 
 Put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.local/bin`.
 
+#### Dependencies
+
+- `[flock](https://www.man7.org/linux/man-pages/man1/flock.1.html)`
+  - `util-linux` package on Arch
+  - `util-linux` package on Debian
+  - `util-linux` package on openSUSE
+  - `util-linux-core` package on Fedora
+
 ### Packages
 
-[![build result](https://build.opensuse.org/projects/home:jcgl/packages/wnl/badge.svg?type=default)](https://build.opensuse.org/package/show/home:jcgl/wnl)
+[![build result](https://build.opensuse.org/projects/home:jcgl/packages/wnl/badge.svg?type=percent)](https://build.opensuse.org/package/show/home:jcgl/wnl)
 
-I'm working on building packages for various distros, but only have RPM packages figured out for now.
+Download the packages or add the openSUSE Build Service repository [here](https://software.opensuse.org//download.html?project=home%3Ajcgl&package=wnl). Current distros include:
 
-Download the packages or add the openSUSE Build Service repository [here](https://software.opensuse.org//download.html?project=home%3Ajcgl&package=wnl).
+- Arch
+- Debian
+- Fedora
+- openSUSE
+- Ubuntu
+
+Please report any issues you may encounter with the packages!
 
 ## Features
 
@@ -127,8 +142,8 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thank you for using wnl!; echo "$F
   - [x] Fish
 - [ ] Man page
 - [x] RPM packages
-- [ ] DEB packages
-- [ ] Arch package
+- [x] DEB packages
+- [x] Arch package
 
 ## The problem space
 

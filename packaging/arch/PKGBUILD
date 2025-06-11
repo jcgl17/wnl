@@ -7,8 +7,8 @@ license=('GPL-3.0-or-later')
 source=("${pkgname}-${pkgver}.tar.gz")
 url="https://codeberg.org/jcgl/wnl"
 sha256sums=('SKIP')
+depends=('util-linux')
 
 package() {
-    install -Dm755 "${srcdir}/${pkgname}-${pkgver}/wnl" "${pkgdir}/usr/bin/wnl"
-    install -Dm755 "${srcdir}/${pkgname}-${pkgver}/wnlctl" "${pkgdir}/usr/bin/wnlctl"
+    make -C "${srcdir}/${pkgname}-${pkgver}" install PACKAGE=1 DESTDIR="${pkgdir}"
 }
