@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+# https://en.opensuse.org/openSUSE:Build_Service_Debian_builds
+
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#DH_VERBOSE = 1
+
+%:
+	dh $@
+
+# If the Makefile in the source for gentoo requires you to specify build as its
+# target to build it [52], you create an override_dh_auto_build target to enable
+# this.
+
+override_dh_auto_clean:
+	dh_auto_clean -- clean
+
+override_dh_auto_build:
+
+override_dh_auto_install:
+	# relies on DESTDIR being set by the build process
+	dh_auto_install -- install PACKAGE=1

@@ -10,6 +10,15 @@ BuildArch:      noarch
 
 Source0:        %{name}-%{version}.tar.gz
 
+BuildRequires: make
+
+# https://en.opensuse.org/openSUSE:Build_Service_cross_distribution_howto
+%if %{defined suse_version}
+Requires: util-linux
+%else
+Requires: util-linux-core
+%endif
+
 %description
 Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line.
 
@@ -20,14 +29,7 @@ Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-styl
 # No building necessary
 
 %install
-rm -rf %{buildroot}
-install -d %{buildroot}%{_bindir}
-install -m 0755 wnl wnlctl %{buildroot}%{_bindir}/
-install -d %{buildroot}%{_datadir}/fish/vendor_completions.d
-install -m 0644 completions/*.fish %{buildroot}%{_datadir}/fish/vendor_completions.d/
-install -d %{buildroot}%{_datadir}/bash-completion/completions
-install -m 0644 completions/wnl.bash %{buildroot}%{_datadir}/bash-completion/completions/wnl
-install -m 0644 completions/wnlctl.bash %{buildroot}%{_datadir}/bash-completion/completions/wnlctl
+%make_build install PACKAGE=1 DESTDIR=%{buildroot}
 
 %files
 %{_bindir}/wnl
@@ -39,6 +41,8 @@ install -m 0644 completions/wnlctl.bash %{buildroot}%{_datadir}/bash-completion/
 %{_datadir}/fish/vendor_completions.d/wnlctl.fish
 %{_datadir}/bash-completion/completions/wnl
 %{_datadir}/bash-completion/completions/wnlctl
+%{_mandir}/man1/wnl.1.gz
+%{_mandir}/man1/wnlctl.1.gz
 
 %changelog
 * Wed Apr 16 2025 j <j@cgl.sh> - 0.1.0-1
