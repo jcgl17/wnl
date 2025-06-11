@@ -63,6 +63,8 @@ Put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.
 
 ### Packages
 
+[![build result](https://build.opensuse.org/projects/home:jcgl/packages/wnl/badge.svg?type=default)](https://build.opensuse.org/package/show/home:jcgl/wnl)
+
 I'm working on building packages for various distros, but only have RPM packages figured out for now.
 
 Download the packages or add the openSUSE Build Service repository [here](https://software.opensuse.org//download.html?project=home%3Ajcgl&package=wnl).
