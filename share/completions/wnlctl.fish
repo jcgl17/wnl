@@ -4,7 +4,7 @@ function __fish_complete_wnlctl
 		set pid (fuser $f 2> /dev/null | string split " " --no-empty)[1]
 		set cmdline (cat /proc/$pid/cmdline | string split0)[3..]
 		if string match --regex --quiet "^\d+\$" $cmdline[1]
-			set cmdline (string join \  $cmdline[2..])
+			set cmdline (echo  "$cmdline[2..]")
 		end
 		if test -n $mtch[2]
 			echo $mtch[2]\twnl: $cmdline

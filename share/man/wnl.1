@@ -1,40 +1,45 @@
-.\" Manpage for wnl and wnlctl
-.Dd 2024-06-01
+.Dd 2025-06-11
 .Dt WNL 1
 .Os
 
 .Sh NAME
 .Nm wnl
-.Nd Wait 'n' Listen: bind and trigger long-running shell commands
+.Nd Wait 'n' Listen: bind a command in one shell, and trigger it on-demand from anywhere
 
 .Sh SYNOPSIS
 .Nm wnl
 .Op Ar SLOT_ID
 .Ar COMMAND
-.Op Ar ARGUMENTS ...
+.Op Ar COMMAND_ARGUMENTS...
 .Nm wnlctl
 .Op Ar SLOT_ID
 
 .Sh DESCRIPTION
-.Pp
 .Nm wnl
-helps create a "Unix as IDE" workflow: you bind a frequently re-run command with
+helps create a "Unix as IDE" workflow: you bind a frequently-run command with
 .Nm wnl\c ,
 then trigger it from anywhere with
 .Nm wnlctl\c .
 
 .Pp
-A typical workflow:
-
+For example:
 .Bl -enum
 .It
-Bind a command in one shell with
+Bind a command (\c
+.Ar COMMAND\c )
+to
+.Ar SLOT_ID
+.Cm 1
+in one shell with
 .Nm wnl
-.Dl $ wnl make test
+.Dl $ wnl 1 make test
 
 .It
-Trigger or re-trigger that command from another shell with
+(repeatedly) Trigger 
+.Ar COMMAND
+by calling
 .Nm wnlctl
+from another shell
 .Dl $ wnlctl 1
 .Pp
 Or bind
@@ -42,24 +47,60 @@ Or bind
 to a keyboard shortcut within your Desktop Environment.
 
 .It
-(optional) Interrupt the running command with
+(optional) Interrupt
+.Ar COMMAND
+with
 .Nm wnlctl
 .Dl $ SIGNAL=USR2 wnlctl 1
 
 .It
-When you're done with this command, un-bind by exiting
+When you're done with this command, un-bind it by exiting
 .Nm wnl
 with
 .Cm Ctrl-c
 .El
 
+.Pp
+While
+.Ar COMMAND
+is running, repeated calls to
+.Nm wnlctl
+do nothing. When
+.Ar COMMAND is not running,
+.Nm wnl
+will sit and wait until
+.Nm wnlctl
+triggers it again.
+
+.Pp
+A "slot" (specified with 
+.Ar SLOT_ID\c )
+represents a single instance of
+.Nm wnl\c .
+This allows for multiple, separate commands to be bound:
+.Bd -literal -offset Ds
+# running two instances in subshells, just to keep this example concise
+$ (wnl 1 sh -c 'for i in once twice; do echo slot 1 says hello $i!; sleep 1; done' &)
+$ (wnl 2 sh -c 'for i in once twice; do echo slot 2 says hello $i!; sleep 1; done' &)
+$ wnlctl 1; wnlctl 2
+[[ running sh -c for i in once twice; do echo slot 1 says hello $i!; sleep 1; done at 17:32:18 in slot 1 ]]
+[[ running sh -c for i in once twice; do echo slot 2 says hello $i!; sleep 1; done at 17:32:18 in slot 2 ]]
+slot 1 says hello once!
+slot 2 says hello once!
+slot 1 says hello twice!
+slot 2 says hello twice!
+[[ finished sh -c for i in once twice; do echo slot 1 says hello $i!; sleep 1; done with exit code 0 at 17:32:20 in slot 1 ]]
+[[ finished sh -c for i in once twice; do echo slot 2 says hello $i!; sleep 1; done with exit code 0 at 17:32:20 in slot 2 ]]
+.Ed
+
 .Sh OPTIONS
-.Bl -tag -width "SLOT_ID"
+.Bl -tag -width
 .It Ar SLOT_ID
 Numeric identifier of the slot. If omitted,
 .Nm wnl
 picks the first free slot (counting up from 1).
-.Nm wnlctl defaults to slot 1.
+.Nm wnlctl
+defaults to slot 1.
 .El
 
 .Sh ENVIRONMENT
@@ -69,11 +110,11 @@ Signal that is used to communicate with
 .Nm wnl\c .
 Either
 .Cm USR1
-tells 
+to tell 
 .Nm wnl
-to start command execution, and
+to start command execution, or
 .Cm USR2
-tells 
+to tell
 .Nm wnl
 to terminate execution.
 
@@ -94,24 +135,31 @@ Run once when
 starts
 
 .It Cm HOOK_PRE
-Run just before each invocation of your command.
+Run just before each invocation of
+.Ar COMMAND
 
 .It Cm HOOK_POST
-Run just after each invocation.  The variable
+Run just after each invocation of
+.Ar COMMAND\c .
+The variable
 .Va EXIT_CODE
 contains the command’s exit status.
 
 .It Cm HOOK_EXIT
-Run when
+Run once when
 .Nm wnl
 exits (after you hit Ctrl-c)
 .El
 
 Example
 .Fa wnlrc :
-.Bd -literal
+.Bd -literal -offset Ds
+# Play a gentle tone whenever wnl is triggered
 HOOK_PRE='pw-play /usr/share/sounds/ocean/stereo/service-logout.oga &'
+# Play a an alert whenever the command run by wnl fails with a nonzero exit code
+# $EXIT_CODE is set to the exit code from the now-finished command
 HOOK_POST='test "$EXIT_CODE" -eq 0 || pw-play /usr/share/sounds/oxygen/stereo/message-connectivity-error.ogg &'
+# ANSI color/formatting codes are available in $FMT_* variables
 HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_NORMAL"'
 .Ed
 
@@ -139,4 +187,3 @@ Report bugs at
 .Li https://codeberg.org/jcgl/wnl/issues
 or email
 .Li j@cgl.sh
-

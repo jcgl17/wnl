@@ -4,9 +4,9 @@ SPECFILE := packaging/rpm/wnl.spec
 VERSION ?= $(shell git describe --tags --always --dirty | tr '-' '+' | sed 's/^v//')
 RELEASE := 1
 
-RPM_DIST := $(shell rpm --eval '%{?dist}')
+RPM_DIST ?= $(shell rpm --eval '%{?dist}')
 
-RPM_NAME := $(shell rpmspec \
+RPM_NAME ?= $(shell rpmspec \
 			--define 'name $(NAME)' \
 			--define "ver $(VERSION)" \
 			--define "rel $(RELEASE)" \
@@ -20,7 +20,7 @@ RPMBUILD_TOPDIR ?= $(HOME)/rpmbuild
 SOURCES         := $(RPMBUILD_TOPDIR)/SOURCES
 BUILD_DIR       := $(RPMBUILD_TOPDIR)/BUILD
 RPMS_DIR        := $(RPMBUILD_TOPDIR)/RPMS/noarch
-RPM_OUT         := $(RPMS_DIR)/$(RPM_NAME)
+RPM_OUT         = $(RPMS_DIR)/$(RPM_NAME)
 
 .PHONY: all prepare rpm clean install
 

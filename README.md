@@ -3,7 +3,7 @@
 This tool facilitates ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflows.
 It enables easy execution/automation of ad-hoc tasks. For example, you can bind those tasks to keyboard shortcuts.
 
-If you have a command you want to be able to trigger again and again, preface the command with 'wnl':
+If you have a command you want to be able to trigger on-demand, bind it with `wnl`. Then trigger it from anywhere with `wnlctl`.
 
 [![asciicast](https://asciinema.org/a/716085.svg)](https://asciinema.org/a/716085)
 
@@ -18,11 +18,11 @@ If you have a command you want to be able to trigger again and again, preface th
 me@pc:~$ make test
 running tests...
 done
-# preface that command with `wnl` to have wnl to be told to trigger it
+# preface that command with `wnl` to bind that command
 me@pc:~$ wnl make test
 # nothing happens until you trigger wnl with the `wnlctl` command,
 # e.g. in another shell.
-# it's best to bind `wnlctl` to a global shortcut in your Desktop Environment
+# it's useful to bind `wnlctl` to a global shortcut in your Desktop Environment
 running tests...
 done
 [[ finished with exit code 0 at 13:07:25 ]]
@@ -63,6 +63,8 @@ done
 Put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.local/bin`.
 
 Optionally, copy shell completion files and the manpage to their respective directories.
+
+Or, run `sudo make install`.
 
 #### Dependencies
 
@@ -137,6 +139,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thank you for using wnl!; echo "$F
   - [ ] Named pipes instead of signals for IPC
   - [ ] Custom signals (e.g. SIGTERM) to command executions
   - [ ] Text to command executions' `stdin`
+- [ ] Add a mode to kill-and-restart when triggering a still-running command, rather than doing nothing
 - [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
 - [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
 - [x] Pre- and post-exec hooks
