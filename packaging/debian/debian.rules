@@ -19,4 +19,4 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	# relies on DESTDIR being set by the build process
-	dh_auto_install -- install PACKAGE=1
+	dh_auto_install -- install SYSTEM=1

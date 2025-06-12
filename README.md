@@ -60,11 +60,10 @@ done
 
 ### Manual
 
-Put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.local/bin`.
+Run `sudo make install` to install system-wide into `/usr/local`, or `make install USER_LOCAL=1` to install into `~/.local`.
+Uninstall with `sudo make uninstall` and `make uninstall USER_LOCAL=1` respectively.
 
-Optionally, copy shell completion files and the manpage to their respective directories.
-
-Or, run `sudo make install`.
+Alternatively, you can just put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.local/bin`.
 
 #### Dependencies
 

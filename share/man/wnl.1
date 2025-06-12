@@ -66,13 +66,14 @@ While
 is running, repeated calls to
 .Nm wnlctl
 do nothing. When
-.Ar COMMAND is not running,
+.Ar COMMAND
+is not running,
 .Nm wnl
 will sit and wait until
 .Nm wnlctl
 triggers it again.
 
-.Pp
+.Sh SLOTS
 A "slot" (specified with 
 .Ar SLOT_ID\c )
 represents a single instance of
@@ -80,17 +81,14 @@ represents a single instance of
 This allows for multiple, separate commands to be bound:
 .Bd -literal -offset Ds
 # running two instances in subshells, just to keep this example concise
-$ (wnl 1 sh -c 'for i in once twice; do echo slot 1 says hello $i!; sleep 1; done' &)
-$ (wnl 2 sh -c 'for i in once twice; do echo slot 2 says hello $i!; sleep 1; done' &)
+$ (wnl 1 echo hi from slot 1! &); (wnl 2 echo hi from slot 2! &)
 $ wnlctl 1; wnlctl 2
-[[ running sh -c for i in once twice; do echo slot 1 says hello $i!; sleep 1; done at 17:32:18 in slot 1 ]]
-[[ running sh -c for i in once twice; do echo slot 2 says hello $i!; sleep 1; done at 17:32:18 in slot 2 ]]
-slot 1 says hello once!
-slot 2 says hello once!
-slot 1 says hello twice!
-slot 2 says hello twice!
-[[ finished sh -c for i in once twice; do echo slot 1 says hello $i!; sleep 1; done with exit code 0 at 17:32:20 in slot 1 ]]
-[[ finished sh -c for i in once twice; do echo slot 2 says hello $i!; sleep 1; done with exit code 0 at 17:32:20 in slot 2 ]]
+[[ running echo hi from slot 1! at 10:12:29 in slot 1 ]]
+[[ running echo hi from slot 2! at 10:12:29 in slot 2 ]]
+hi from slot 1!
+hi from slot 2!
+[[ finished echo hi from slot 1! with exit code 0 at 10:12:29 in slot 1 ]]
+[[ finished echo hi from slot 2! with exit code 0 at 10:12:29 in slot 2 ]]
 .Ed
 
 .Sh OPTIONS

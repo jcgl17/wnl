@@ -1,7 +1,7 @@
 pkgname=wnl
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line."
+pkgdesc="Enables global keyboard shortcuts for your shell"
 arch=('any')
 license=('GPL-3.0-or-later')
 source=("${pkgname}-${pkgver}.tar.gz")
@@ -10,5 +10,6 @@ sha256sums=('SKIP')
 depends=('util-linux')
 
 package() {
-    make -C "${srcdir}/${pkgname}-${pkgver}" install PACKAGE=1 DESTDIR="${pkgdir}"
+    make -C "${srcdir}/${pkgname}-${pkgver}" install SYSTEM=1 DESTDIR="${pkgdir}"
+    rm -rv "${pkgdir:?}/usr/share/licenses"
 }

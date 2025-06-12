@@ -1,14 +1,14 @@
 %global ver %{?ver}
 %global rel %{?rel}
 
-Name:           wnl
-Version:        %{ver}
-Release:        %{rel}%{dist}
-Summary:        tools to manage a command line from afar
-License:        GPLv3
-BuildArch:      noarch
-
-Source0:        %{name}-%{version}.tar.gz
+Name:			wnl
+Version:		%{ver}
+Release:		%{rel}%{dist}
+Summary:		Enables global keyboard shortcuts for your shell
+License:		GPL-3.0-or-later
+BuildArch:		noarch
+URL:			https://codeberg.org/jcgl/wnl
+Source0:		%{name}-%{version}.tar.gz
 
 BuildRequires: make
 
@@ -20,7 +20,8 @@ Requires: util-linux-core
 %endif
 
 %description
-Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line.
+Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line.
+Bind a command with `wnl`, and trigger the command with `wnlctl`.
 
 %prep
 %setup -q
@@ -29,7 +30,7 @@ Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-styl
 # No building necessary
 
 %install
-%make_build install PACKAGE=1 DESTDIR=%{buildroot}
+%make_build install SYSTEM=1 DESTDIR=%{buildroot}
 
 %files
 %{_bindir}/wnl
@@ -43,6 +44,7 @@ Enables global keyboard shortcuts for your shell. Brings the comfort of IDE-styl
 %{_datadir}/bash-completion/completions/wnlctl
 %{_mandir}/man1/wnl.1.gz
 %{_mandir}/man1/wnlctl.1.gz
+%license LICENSE.md
 
 %changelog
 * Wed Apr 16 2025 j <j@cgl.sh> - 0.1.0-1
