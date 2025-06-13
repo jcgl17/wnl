@@ -3,11 +3,11 @@ $(error no target selected. please choose "make install" or "make uninstall" [SY
 endif
 
 ifdef SYSTEM
-PREFIX := /usr
+PREFIX := $(DESTDIR)/usr
 else ifdef USER_LOCAL
-PREFIX := $(HOME)/.local
+PREFIX := $(DESTDIR)$(HOME)/.local
 else
-PREFIX := /usr/local
+PREFIX := $(DESTDIR)/usr/local
 endif
 
 BIN_DIR := $(PREFIX)/bin
@@ -16,19 +16,33 @@ COMPLETION_DIR_BASH := $(PREFIX)/share/bash-completion/completions
 COMPLETION_DIR_FISH := $(PREFIX)/share/fish/vendor_completions.d
 LICENSES_DIR := $(PREFIX)/share/licenses/wnl
 
+.PHONY: install uninstall link
+
 install:
-	install -vDm 0755 wnl wnlctl -t $(DESTDIR)$(BIN_DIR)
-	install -vDm 0644 share/completions/*.fish -t $(DESTDIR)$(COMPLETION_DIR_FISH)
-	install -vDm 0644 share/completions/wnl.bash $(DESTDIR)$(COMPLETION_DIR_BASH)/wnl
-	install -vDm 0644 share/completions/wnlctl.bash $(DESTDIR)$(COMPLETION_DIR_BASH)/wnlctl
-	install -dm 0755 $(DESTDIR)$(MAN_DIR)/man1
-	gzip --stdout share/man/wnl.1 > $(DESTDIR)$(MAN_DIR)/man1/wnl.1.gz
-	ln -sv wnl.1.gz $(DESTDIR)$(MAN_DIR)/man1/wnlctl.1.gz
-	install -vDm 0644 LICENSE.md -t $(DESTDIR)$(LICENSES_DIR)
+	install -vDm 0755 wnl wnlctl -t $(BIN_DIR)
+	install -vDm 0644 share/completions/*.fish -t $(COMPLETION_DIR_FISH)
+	install -vDm 0644 share/completions/wnl.bash $(COMPLETION_DIR_BASH)/wnl
+	install -vDm 0644 share/completions/wnlctl.bash $(COMPLETION_DIR_BASH)/wnlctl
+	install -dm 0755 $(MAN_DIR)/man1
+	gzip --stdout share/man/wnl.1 > $(MAN_DIR)/man1/wnl.1.gz
+	ln -sv wnl.1.gz $(MAN_DIR)/man1/wnlctl.1.gz
+	install -vDm 0644 LICENSE.md -t $(LICENSES_DIR)
 
 uninstall:
 	rm -vf $(BIN_DIR)/{wnl,wnlctl}
 	rm -vf $(COMPLETION_DIR_FISH)/share/completions/{wnl,wnlctl}.fish
 	rm -vf $(COMPLETION_DIR_BASH)/{wnl,wnlctl}
-	rm -vf $(MAN_DIR)/man1/{wnl,wnlctl}.1.gz
+	rm -vf $(MAN_DIR)/man1/{wnl,wnlctl}.1*
 	rm -vfr $(LICENSES_DIR)
+
+link:
+	ln -sf $(CURDIR)/wnl $(BIN_DIR)/wnl
+	ln -sf $(CURDIR)/wnlctl $(BIN_DIR)/wnlctl
+	ln -sf $(CURDIR)/share/completions/wnl.bash $(COMPLETION_DIR_BASH)/wnl
+	ln -sf $(CURDIR)/share/completions/wnlctl.bash $(COMPLETION_DIR_BASH)/wnlctl
+	ln -sf $(CURDIR)/share/completions/wnl.fish $(COMPLETION_DIR_FISH)/wnl.fish
+	ln -sf $(CURDIR)/share/completions/wnlctl.fish $(COMPLETION_DIR_FISH)/wnlctl.fish
+	ln -sf $(CURDIR)/share/man/wnl.1 $(MAN_DIR)/man1/wnl.1
+	ln -sf $(CURDIR)/share/man/wnl.1 $(MAN_DIR)/man1/wnlctl.1
+	mkdir -pv $(LICENSES_DIR)
+	ln -sf $(CURDIR)/LICENSE.md $(LICENSES_DIR)/LICENSE.md

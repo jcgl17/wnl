@@ -20,9 +20,11 @@ AUTOSLOT_MAX=10
 load_rc_file
 ### }} CONFIGURATION
 
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+
 pidfile() {
 	local slot=$1
-	echo "${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR not set}/wnl_slot_${slot}.pid"
+	echo "${RUNTIME_DIR}/wnl_slot_${slot}.pid"
 }
 
 ### ARG PARSING {{

@@ -11,7 +11,8 @@ else
 	SLOT=1
 fi
 
-PIDFILE="${XDG_RUNTIME_DIR:?is required}/wnl_slot_${SLOT}.pid"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+PIDFILE="${RUNTIME_DIR}/wnl_slot_${SLOT}.pid"
 
 if [ ! -f "$PIDFILE" ]; then
 	echo "Error: pidfile $PIDFILE not found" >&2
