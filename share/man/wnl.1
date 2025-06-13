@@ -1,11 +1,9 @@
 .Dd 2025-06-11
 .Dt WNL 1
 .Os
-
 .Sh NAME
 .Nm wnl
 .Nd Wait 'n' Listen: bind a command in one shell, and trigger it on-demand from anywhere
-
 .Sh SYNOPSIS
 .Nm wnl
 .Op Ar SLOT_ID
@@ -13,14 +11,12 @@
 .Op Ar COMMAND_ARGUMENTS...
 .Nm wnlctl
 .Op Ar SLOT_ID
-
 .Sh DESCRIPTION
 .Nm wnl
 helps create a "Unix as IDE" workflow: you bind a frequently-run command with
 .Nm wnl\c ,
 then trigger it from anywhere with
 .Nm wnlctl\c .
-
 .Pp
 For example:
 .Bl -enum
@@ -33,7 +29,6 @@ to
 in one shell with
 .Nm wnl
 .Dl $ wnl 1 make test
-
 .It
 (repeatedly) Trigger 
 .Ar COMMAND
@@ -45,21 +40,18 @@ from another shell
 Or bind
 .Cm wnlctl 1
 to a keyboard shortcut within your Desktop Environment.
-
 .It
 (optional) Interrupt
 .Ar COMMAND
 with
 .Nm wnlctl
 .Dl $ SIGNAL=USR2 wnlctl 1
-
 .It
 When you're done with this command, un-bind it by exiting
 .Nm wnl
 with
 .Cm Ctrl-c
 .El
-
 .Pp
 While
 .Ar COMMAND
@@ -72,7 +64,6 @@ is not running,
 will sit and wait until
 .Nm wnlctl
 triggers it again.
-
 .Sh SLOTS
 A "slot" (specified with 
 .Ar SLOT_ID\c )
@@ -90,9 +81,8 @@ hi from slot 2!
 [[ finished echo hi from slot 1! with exit code 0 at 10:12:29 in slot 1 ]]
 [[ finished echo hi from slot 2! with exit code 0 at 10:12:29 in slot 2 ]]
 .Ed
-
 .Sh OPTIONS
-.Bl -tag -width
+.Bl -tag -width SLOT_ID
 .It Ar SLOT_ID
 Numeric identifier of the slot. If omitted,
 .Nm wnl
@@ -100,11 +90,10 @@ picks the first free slot (counting up from 1).
 .Nm wnlctl
 defaults to slot 1.
 .El
-
 .Sh ENVIRONMENT
-.Bl -tag -width "SIGNAL"
+.Bl -tag -width SIGNAL
 .It Ev SIGNAL
-Signal that is used to communicate with
+The signal that is sent to
 .Nm wnl\c .
 Either
 .Cm USR1
@@ -115,40 +104,33 @@ to start command execution, or
 to tell
 .Nm wnl
 to terminate execution.
-
 .Cm USR1
 is sent if this is not specified.
 .El
-
 .Sh FILES
 User configuration file:
 .Pa ~/.config/wnl/wnlrc
-
+.Pp
 The only interesting things to configure are hooks. Hooks are shell snippets that are executed at various points in wnl's lifecycle:
-
 .Bl -tag
 .It Cm HOOK_STARTUP
 Run once when
 .Nm wnl
 starts
-
 .It Cm HOOK_PRE
 Run just before each invocation of
 .Ar COMMAND
-
 .It Cm HOOK_POST
 Run just after each invocation of
 .Ar COMMAND\c .
 The variable
 .Va EXIT_CODE
 contains the command’s exit status.
-
 .It Cm HOOK_EXIT
 Run once when
 .Nm wnl
 exits (after you hit Ctrl-c)
 .El
-
 Example
 .Fa wnlrc :
 .Bd -literal -offset Ds
@@ -160,26 +142,21 @@ HOOK_POST='test "$EXIT_CODE" -eq 0 || pw-play /usr/share/sounds/oxygen/stereo/me
 # ANSI color/formatting codes are available in $FMT_* variables
 HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_NORMAL"'
 .Ed
-
 .Sh EXAMPLES
 .Bl -enum
 .It
 Run tests in the next free slot:
 .Dl $ wnl make test
-
 .It
 Trigger slot 1 (for example, bound to Ctrl-F1 in your Desktop Environment):
 .Dl $ wnlctl 1
-
 .It
 Abort the command in slot 1 (for example, bound to Ctrl-Shift-F1 in your Desktop Environment):
 .Dl $ SIGNAL=USR2 wnlctl 1
 .El
-
 .Sh SEE ALSO
 .Xr entr 1
 — another Unix-as-IDE tool
-
 .Sh BUGS
 Report bugs at
 .Li https://codeberg.org/jcgl/wnl/issues

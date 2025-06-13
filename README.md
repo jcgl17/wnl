@@ -1,9 +1,6 @@
 # `wnl`—Wait 'n' Listen
 
-This tool facilitates ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflows.
-It enables easy execution/automation of ad-hoc tasks. For example, you can bind those tasks to keyboard shortcuts.
-
-If you have a command you want to be able to trigger on-demand, bind it with `wnl`. Then trigger it from anywhere with `wnlctl`.
+`wnl` helps create a "Unix as IDE" workflow: you bind a frequently-run command with `wnl`, then trigger it from anywhere with `wnlctl`.
 
 [![asciicast](https://asciinema.org/a/716085.svg)](https://asciinema.org/a/716085)
 
@@ -35,6 +32,34 @@ done
 </details>
 <!-- markdownlint-enable no-inline-html -->
 
+For example:
+
+1. Bind a command (`COMMAND`) to `SLOT_ID` `1` in one shell with `wnl`
+   (see below for explanation of slots)
+
+    ```command
+    $ wnl 1 make test
+    ```
+
+2. (repeatedly) Trigger `COMMAND` by calling `wnlctl` from another shell
+
+    ```command
+    $ wnlctl 1
+    ```
+
+   Or bind `wnlctl 1` to a keyboard shortcut within your Desktop Environment.
+
+3. (optional) Interrupt `COMMAND` with `wnlctl`
+
+    ```command
+    $ SIGNAL=USR2 wnlctl 1
+    ```
+
+4. When you're done with this command, un-bind it by exiting `wnl` with `Ctrl-c`
+
+While `COMMAND` is running, repeated calls to `wnlctl` do nothing.
+When `COMMAND` is not running, `wnl` will sit and wait until `wnlctl` triggers it again.
+
 ## Contents
 
 <!-- mtoc-start -->
@@ -43,10 +68,12 @@ done
   - [Manual](#manual)
     - [Dependencies](#dependencies)
   - [Packages](#packages)
-- [Features](#features)
-  - [Multiple instances—slots](#multiple-instancesslots)
-  - [Stopping program execution](#stopping-program-execution)
-  - [User configuration](#user-configuration)
+- [Usage](#usage)
+  - [Syntax](#syntax)
+  - [Slots](#slots)
+    - [Options](#options)
+    - [Environment](#environment)
+  - [Configuration](#configuration)
 - [Roadmap](#roadmap)
 - [The problem space](#the-problem-space)
 - [Example scenarios](#example-scenarios)
@@ -60,7 +87,10 @@ done
 
 ### Manual
 
-Run `sudo make install` to install system-wide into `/usr/local`, or `make install USER_LOCAL=1` to install into `~/.local`.
+Run `sudo make install` to install system-wide.
+
+Run `make install USER_LOCAL=1` to install just to your home directory.
+
 Uninstall with `sudo make uninstall` and `make uninstall USER_LOCAL=1` respectively.
 
 Alternatively, you can just put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.local/bin`.
@@ -87,37 +117,58 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 
 Please report any issues you may encounter with the packages!
 
-## Features
 
-### Multiple instances—slots
+## Usage
 
-To run multiple instances, wnl has a feature called "slots".
-You can run `wnl $SLOT_ID $COMMAND`, where `$SLOT_ID` is a number.
-If you do not specify `$SLOT_ID`, then wnl will use the next available slot ID, counting up from 1.
+### Syntax
 
-Correspondingly, call `wnlctl $SLOT_ID` to signal the `wnl` instance with that SLOT_ID.
-`wnlctl` default to `1` for `SLOT_ID` if not specified.
+```
+wnl [SLOT_ID] COMMAND [COMMAND_ARGUMENTS...]
+wnlctl [SLOT_ID]
+```
 
-### Stopping program execution
+### Slots
 
-Call `SIGNAL=USR2 wnlctl $SLOT_ID` to kill the command running in wnl (SIGINT is sent).
-If wnl is not currently running the command, then no action is taken.
+A "slot" (specified with `SLOT_ID`) represents a single instance of `wnl`.
+This allows for multiple, separate commands to be bound:
 
-### User configuration
+```command
+# running two instances in subshells, just to keep this example concise
+$ (wnl 1 echo hi from slot 1! &); (wnl 2 echo hi from slot 2! &)
+$ wnlctl 1; wnlctl 2
+[[ running echo hi from slot 1! at 10:12:29 in slot 1 ]]
+[[ running echo hi from slot 2! at 10:12:29 in slot 2 ]]
+hi from slot 1!
+hi from slot 2!
+[[ finished echo hi from slot 1! with exit code 0 at 10:12:29 in slot 1 ]]
+[[ finished echo hi from slot 2! with exit code 0 at 10:12:29 in slot 2 ]]
+```
 
-Behavior can be customized using a file at `~/.config/wnl/wnlrc`.
-Right now, hooks are the main reason to customize your configuration.
-These are simply shell snippets that get run by your shell (`$SHELL`).
-There are four hooks:
+#### Options
 
-| Name           | Description                                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------------------------------ |
-| `HOOK_PRE`     | Every time wnl is triggered with `wnlctl`, this snippet is run _before_ executing the command given to `wnl` |
-| `HOOK_POST`    | Every time wnl is triggered with `wnlctl`, this snippet is run _after_ executing the command given to `wnl`  |
-| `HOOK_STARTUP` | This snippet is run when `wnl` is started                                                                    |
-| `HOOK_EXIT`    | This snippet is run when `wnl` is exited (e.g. with `Ctrl-c`)                                                |
+`SLOT_ID`: Numeric identifier of the slot.
+`wnl` defaults to the first unused slot (counting up from 1).
+`wnlctl` defaults to slot 1.
 
-A simple example of a `wnlrc`:
+#### Environment
+
+`SIGNAL`: The signal that `wnlctl` sends to `wnl`. Either `USR1` to tell `wnl` to start command execution, or `USR2` to tell `wnl` to terminate execution. Defaults to `USR1`.
+
+### Configuration
+
+User configuration file: `~/.config/wnl/wnlrc`
+
+The only interesting things to configure are hooks.
+Hooks are shell snippets that are executed at various points in wnl's lifecycle:
+
+| Name           | Description                                                                                               |
+| -------------- | --------------------------------------------------------------------------------------------------------- |
+| `HOOK_STARTUP` | Run once when `wnl` starts                                                                                |
+| `HOOK_EXIT`    | Run once when `wnl` exits (after you hit Ctrl-c)                                                          |
+| `HOOK_PRE`     | Run just before each invocation of `COMMAND`                                                              |
+| `HOOK_POST`    | Run just after each invocation of `COMMAND`. The variable `EXIT_CODE` contains the command's exit status. |
+
+Example `wnlrc`:
 
 ```bash
 # Play a gentle tone whenever wnl is triggered
@@ -126,7 +177,7 @@ HOOK_PRE='pw-play /usr/share/sounds/ocean/stereo/service-logout.oga &'
 # $EXIT_CODE is set to the exit code from the now-finished command
 HOOK_POST='test "$EXIT_CODE" -eq 0 || pw-play /usr/share/sounds/oxygen/stereo/message-connectivity-error.ogg &'
 # ANSI color/formatting codes are available in $FMT_* variables
-HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thank you for using wnl!; echo "$FMT_NORMAL"'
+HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_NORMAL"'
 ```
 
 ## Roadmap
