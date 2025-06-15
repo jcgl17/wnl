@@ -71,8 +71,8 @@ When `COMMAND` is not running, `wnl` will sit and wait until `wnlctl` triggers i
 - [Usage](#usage)
   - [Syntax](#syntax)
   - [Slots](#slots)
-    - [Options](#options)
-    - [Environment](#environment)
+  - [Options](#options)
+  - [Environment](#environment)
   - [Configuration](#configuration)
 - [Roadmap](#roadmap)
 - [The problem space](#the-problem-space)
@@ -144,13 +144,13 @@ hi from slot 2!
 [[ finished echo hi from slot 2! with exit code 0 at 10:12:29 in slot 2 ]]
 ```
 
-#### Options
+### Options
 
 `SLOT_ID`: Numeric identifier of the slot.
 `wnl` defaults to the first unused slot (counting up from 1).
 `wnlctl` defaults to slot 1.
 
-#### Environment
+### Environment
 
 `SIGNAL`: The signal that `wnlctl` sends to `wnl`. Either `USR1` to tell `wnl` to start command execution, or `USR2` to tell `wnl` to terminate execution. Defaults to `USR1`.
 

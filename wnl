@@ -150,6 +150,7 @@ shell_integrations_prompt_start() {
 cmd_title() {
 	# 56 is roughly the width of the banner_post (which in longer than banner_pre), minus CMD_TITLE
 	CMD_TITLE_MAXLENGTH=$(("$(tput cols)" - 56))
+	test $CMD_TITLE_MAXLENGTH -lt 10 && CMD_TITLE_MAXLENGTH=10
 	excess_title_length="$(("${#CMD_RAW}" - "${CMD_TITLE_MAXLENGTH}"))"
 	if [ "${excess_title_length}" -gt "1" ]; then
 		trim_head="${CMD_RAW:0:$(("$CMD_TITLE_MAXLENGTH"/2))}"
