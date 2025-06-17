@@ -162,12 +162,18 @@ cmd_title() {
 	echo "$CMD_TITLE"
 }
 
-# kill_signal heuristically decides what signal should be sent to kill SHELL_CHILD
+# kill_signal decides what signal should be sent to kill SHELL_CHILD
 kill_signal() {
 	cmd=$1
+	# if user has specified a kill signal, user that
+	if [ -n "$KILL_SIGNAL" ]; then
+		echo "$KILL_SIGNAL"
+		return 0
+	fi
+	# otherwise, fall back on heuristics
 	if [[ "$cmd" =~ ^[a-zA-Z]*sh\ -c ]]; then
 		echo TERM
-	elif [[ "$cmd" =~ ^make\  ]]; then
+	elif [[ "$cmd" =~ ^make( |$)  ]]; then
 		echo TERM
 	else
 		echo INT
@@ -178,8 +184,8 @@ kill_signal() {
 # make pidfile with locking
 exec 17<>"$PIDFILE"
 if ! flock -n -x 17; then
-    echo "Error: unable to acquire lock on $PIDFILE" >&2
-    exit 1
+	echo "Error: unable to acquire lock on $PIDFILE" >&2
+	exit 1
 fi
 echo $$ > "$PIDFILE"
 test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
