@@ -209,7 +209,7 @@ while true; do
 			# Kill the actual process the user specified, rather than trying to kill the shell 
 			# _running_ that command.
 			# kill -INT "$RUNNING_CMD"
-			SHELL_CHILD=$(pgrep -P "$RUNNING_CMD")
+			SHELL_CHILD=$(pgrep --parent "$RUNNING_CMD")
 			if [ -n "$SHELL_CHILD" ]; then
 				kill -"$(kill_signal "$CMD_RAW")" "$SHELL_CHILD"
 			fi

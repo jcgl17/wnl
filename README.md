@@ -102,6 +102,11 @@ Alternatively, you can just put these two shell scripts—`wnl` and `wnlctl`—i
   - `util-linux` package on Debian
   - `util-linux` package on openSUSE
   - `util-linux-core` package on Fedora
+- [`pgrep`](https://www.man7.org/linux/man-pages/man1/pgrep.1.html)
+  - `procps` package on Arch
+  - `procps` package on Debian
+  - `procps` package on openSUSE
+  - `procps-ng` package on Fedora
 
 ### Packages
 
