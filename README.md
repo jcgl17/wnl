@@ -103,10 +103,15 @@ Alternatively, you can just put these two shell scripts—`wnl` and `wnlctl`—i
   - `util-linux` package on openSUSE
   - `util-linux-core` package on Fedora
 - [`pgrep`](https://www.man7.org/linux/man-pages/man1/pgrep.1.html)
-  - `procps` package on Arch
+  - `procps-ng` package on Arch
   - `procps` package on Debian
   - `procps` package on openSUSE
   - `procps-ng` package on Fedora
+- [`tput`](https://www.man7.org/linux/man-pages/man1/pgrep.1.html)
+  - `ncurses` package on Arch
+  - `ncurses-bin` package on Debian
+  - `ncurses-utils` package on openSUSE
+  - `ncurses` package on Fedora
 
 ### Packages
 

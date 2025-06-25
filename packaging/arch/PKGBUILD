@@ -7,7 +7,7 @@ license=('GPL-3.0-or-later')
 source=("${pkgname}-${pkgver}.tar.gz")
 url="https://codeberg.org/jcgl/wnl"
 sha256sums=('SKIP')
-depends=('util-linux' 'procps-ng')
+depends=('util-linux' 'procps-ng' 'ncurses')
 
 package() {
     make -C "${srcdir}/${pkgname}-${pkgver}" install SYSTEM=1 DESTDIR="${pkgdir}"
