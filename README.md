@@ -211,6 +211,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [x] Arch
   - [x] Debian
   - [x] RPM
+- [ ] Add a config that requires multiple, quick signals from `wnlctl` to prevent accidental/fat-fingered triggers
 
 ## The problem space
 

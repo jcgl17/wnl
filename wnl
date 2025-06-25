@@ -67,23 +67,23 @@ SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
 # define colors
 # https://unix.stackexchange.com/a/10065
 if test -t 1; then
-    # see if it supports colors...
-    ncolors=$(tput colors)
-    if test -n "$ncolors" && test "$ncolors" -ge 8; then
-        FMT_BOLD="$(tput bold)"; export FMT_BOLD
-        FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
-        FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
-        FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
-        FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
-        FMT_RED="$(tput setaf 1)"; export FMT_RED
-        FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
-        FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
-        FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
-        FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
-        FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
-        FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
-        FMT_GREY="$(tput setaf 8)"; export FMT_GREY
-    fi
+	# see if it supports colors...
+	ncolors=$(tput colors)
+	if test -n "$ncolors" && test "$ncolors" -ge 8; then
+		FMT_BOLD="$(tput bold)"; export FMT_BOLD
+		FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
+		FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
+		FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
+		FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
+		FMT_RED="$(tput setaf 1)"; export FMT_RED
+		FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
+		FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
+		FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
+		FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
+		FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
+		FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
+		FMT_GREY="$(tput setaf 8)"; export FMT_GREY
+	fi
 fi
 
 handle_usr1() {
@@ -101,13 +101,36 @@ handle_exit() {
 	hook_exit
 }
 
+diff_time() {
+	t1=$(date -d "$1" +%s 2>/dev/null) || { echo "Bad date: $1" >&2; return 1; }
+	t2=$(date -d "$2" +%s 2>/dev/null) || { echo "Bad date: $2" >&2; return 1; }
+
+	# it turns out that arithmetic in bash can do cool things like assignment and ternaries
+	# https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html
+	# "ARITHMETIC EVALUATION" section in bash manpage
+	(( delta = t1 > t2 ? t1 - t2 : t2 - t1 ))
+	(( days = delta / 86400, delta %= 86400 ))
+	(( hours = delta / 3600, delta %= 3600  ))
+	(( mins = delta / 60, secs  = delta % 60 ))
+
+	if [ "$days" -gt 0 ]; then
+		printf "%d:%02d:%02d:%02d\n" "$days" "$hours" "$mins" "$secs"
+	elif [ "$hours" -gt 0 ]; then
+		printf "%d:%02d:%02d\n" "$hours" "$mins" "$secs"
+	else
+		printf "%d:%02d\n" "$mins" "$secs"
+	fi
+}
+
 banner_pre() {
+	START_TIME=$(date +%X)
 	test "$BANNER_PRE_ENABLE" -eq "0" && return
 	bracket_color="${FMT_CYAN}"
-	echo "${bracket_color}[[ ${FMT_NORMAL}${FMT_GREY}running${FMT_NORMAL} $(cmd_title) ${FMT_GREY}at${FMT_NORMAL} $(date +%X) ${FMT_GREY}in slot${FMT_NORMAL} $SLOT ${bracket_color}]]${FMT_NORMAL}"
+	echo "${bracket_color}[[ ${FMT_NORMAL}${FMT_GREY}running${FMT_NORMAL} $(cmd_title) ${FMT_GREY}at${FMT_NORMAL} ${START_TIME} ${FMT_GREY}in slot${FMT_NORMAL} $SLOT ${bracket_color}]]${FMT_NORMAL}"
 }
 
 banner_post() {
+	STOP_TIME=$(date +%X)
 	test "$BANNER_POST_ENABLE" -eq "0" && return
 	if [ "$EXIT_CODE" -ne 0 ]; then
 		bracket_color="${FMT_RED}"
@@ -117,7 +140,7 @@ banner_post() {
 		exit_code_color="${FMT_NORMAL}"
 	fi
 	shell_integrations_prompt_start
-	echo "${bracket_color}[[ ${FMT_NORMAL}${FMT_GREY}finished ${FMT_NORMAL}$(cmd_title)${FMT_GREY} with exit code ${exit_code_color}${EXIT_CODE}${FMT_NORMAL} ${FMT_GREY}at${FMT_NORMAL} $(date +%X) ${FMT_GREY}in slot${FMT_NORMAL} $SLOT ${bracket_color}]]${FMT_NORMAL}"
+	echo "${bracket_color}[[ ${FMT_NORMAL}${FMT_GREY}finished ${FMT_NORMAL}$(cmd_title)${FMT_GREY} with exit code ${exit_code_color}${EXIT_CODE}${FMT_NORMAL} ${FMT_GREY}at${FMT_NORMAL} ${STOP_TIME}(+$(diff_time "$START_TIME" "$STOP_TIME")) ${FMT_GREY}in slot${FMT_NORMAL} $SLOT ${bracket_color}]]${FMT_NORMAL}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
@@ -148,8 +171,8 @@ shell_integrations_prompt_start() {
 }
 
 cmd_title() {
-	# 56 is roughly the width of the banner_post (which in longer than banner_pre), minus CMD_TITLE
-	CMD_TITLE_MAXLENGTH=$(("$(tput cols)" - 56))
+	# 60 is roughly the width of the banner_post (which in longer than banner_pre), minus CMD_TITLE
+	CMD_TITLE_MAXLENGTH=$(("$(tput cols)" - 60))
 	test $CMD_TITLE_MAXLENGTH -lt 10 && CMD_TITLE_MAXLENGTH=10
 	excess_title_length="$(("${#CMD_RAW}" - "${CMD_TITLE_MAXLENGTH}"))"
 	if [ "${excess_title_length}" -gt "1" ]; then
