@@ -16,8 +16,7 @@ COMPLETION_DIR_BASH := $(PREFIX)/share/bash-completion/completions
 COMPLETION_DIR_FISH := $(PREFIX)/share/fish/vendor_completions.d
 LICENSES_DIR := $(PREFIX)/share/licenses/wnl
 
-.PHONY: install uninstall link
-
+.PHONY: install
 install:
 	install -vDm 0755 wnl wnlctl -t $(BIN_DIR)
 	install -vDm 0644 share/completions/*.fish -t $(COMPLETION_DIR_FISH)
@@ -28,6 +27,7 @@ install:
 	ln -sv wnl.1.gz $(MAN_DIR)/man1/wnlctl.1.gz
 	install -vDm 0644 LICENSE.md -t $(LICENSES_DIR)
 
+.PHONY: uninstall
 uninstall:
 	rm -vf $(BIN_DIR)/{wnl,wnlctl}
 	rm -vf $(COMPLETION_DIR_FISH)/share/completions/{wnl,wnlctl}.fish
@@ -35,6 +35,7 @@ uninstall:
 	rm -vf $(MAN_DIR)/man1/{wnl,wnlctl}.1*
 	rm -vfr $(LICENSES_DIR)
 
+.PHONY: link
 link:
 	ln -sf $(CURDIR)/wnl $(BIN_DIR)/wnl
 	ln -sf $(CURDIR)/wnlctl $(BIN_DIR)/wnlctl
@@ -46,3 +47,8 @@ link:
 	ln -sf $(CURDIR)/share/man/wnl.1 $(MAN_DIR)/man1/wnlctl.1
 	mkdir -pv $(LICENSES_DIR)
 	ln -sf $(CURDIR)/LICENSE.md $(LICENSES_DIR)/LICENSE.md
+
+.PHONY: release
+release:
+	./util/generate_release_notes
+	sh -c "git tag $$(./util/generate_release_notes | head -n1) --annotate --sign --file <(./util/generate_release_notes)"
