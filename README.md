@@ -1,6 +1,7 @@
-# `wnl`—Wait 'n' Listen
+# wnl—Wait 'n' Listen
 
-`wnl` helps create a "Unix as IDE" workflow: you bind a frequently-run command with `wnl`, then trigger it from anywhere with `wnlctl`.
+wnl helps create a ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflow:
+you bind a frequently-run command with `wnl`, then trigger it from anywhere with `wnlctl`.
 
 [![asciicast](https://asciinema.org/a/716085.svg)](https://asciinema.org/a/716085)
 

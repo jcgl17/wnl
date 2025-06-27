@@ -19,9 +19,8 @@ LICENSES_DIR := $(PREFIX)/share/licenses/wnl
 .PHONY: install
 install:
 	install -vDm 0755 wnl wnlctl -t $(BIN_DIR)
-	install -vDm 0644 share/completions/*.fish -t $(COMPLETION_DIR_FISH)
-	install -vDm 0644 share/completions/wnl.bash $(COMPLETION_DIR_BASH)/wnl
-	install -vDm 0644 share/completions/wnlctl.bash $(COMPLETION_DIR_BASH)/wnlctl
+	install -vDm 0644 share/completions/bash/* -t $(COMPLETION_DIR_BASH)
+	install -vDm 0644 share/completions/fish/* -t $(COMPLETION_DIR_FISH)
 	install -dm 0755 $(MAN_DIR)/man1
 	gzip --stdout share/man/wnl.1 > $(MAN_DIR)/man1/wnl.1.gz
 	ln -sv wnl.1.gz $(MAN_DIR)/man1/wnlctl.1.gz
@@ -30,8 +29,8 @@ install:
 .PHONY: uninstall
 uninstall:
 	rm -vf $(BIN_DIR)/{wnl,wnlctl}
-	rm -vf $(COMPLETION_DIR_FISH)/share/completions/{wnl,wnlctl}.fish
 	rm -vf $(COMPLETION_DIR_BASH)/{wnl,wnlctl}
+	rm -vf $(COMPLETION_DIR_FISH)/share/completions/{wnl,wnlctl}.fish
 	rm -vf $(MAN_DIR)/man1/{wnl,wnlctl}.1*
 	rm -vfr $(LICENSES_DIR)
 
@@ -39,10 +38,10 @@ uninstall:
 link:
 	ln -sf $(CURDIR)/wnl $(BIN_DIR)/wnl
 	ln -sf $(CURDIR)/wnlctl $(BIN_DIR)/wnlctl
-	ln -sf $(CURDIR)/share/completions/wnl.bash $(COMPLETION_DIR_BASH)/wnl
-	ln -sf $(CURDIR)/share/completions/wnlctl.bash $(COMPLETION_DIR_BASH)/wnlctl
-	ln -sf $(CURDIR)/share/completions/wnl.fish $(COMPLETION_DIR_FISH)/wnl.fish
-	ln -sf $(CURDIR)/share/completions/wnlctl.fish $(COMPLETION_DIR_FISH)/wnlctl.fish
+	ln -sf $(CURDIR)/share/completions/bash/wnl $(COMPLETION_DIR_BASH)/wnl
+	ln -sf $(CURDIR)/share/completions/bash/wnlctl $(COMPLETION_DIR_BASH)/wnlctl
+	ln -sf $(CURDIR)/share/completions/fish/wnl.fish $(COMPLETION_DIR_FISH)/wnl.fish
+	ln -sf $(CURDIR)/share/completions/fish/wnlctl.fish $(COMPLETION_DIR_FISH)/wnlctl.fish
 	ln -sf $(CURDIR)/share/man/wnl.1 $(MAN_DIR)/man1/wnl.1
 	ln -sf $(CURDIR)/share/man/wnl.1 $(MAN_DIR)/man1/wnlctl.1
 	mkdir -pv $(LICENSES_DIR)

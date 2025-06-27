@@ -1,3 +1,5 @@
+# wnlctl(1) completion                                      -*- shell-script -*-
+
 _wnlctl_completion() {
   local cur
   local RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
@@ -18,3 +20,5 @@ _wnlctl_completion() {
 }
 
 complete -F _wnlctl_completion wnlctl
+
+# ex: filetype=sh

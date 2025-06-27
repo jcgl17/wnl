@@ -1,3 +1,4 @@
+# wnl(1) completion                                      -*- shell-script -*-
 # taken directly from /usr/share/bash-completion/completions/watch
 
 _comp_cmd_watch()
@@ -51,3 +52,5 @@ _comp_cmd_watch()
     fi
 } &&
     complete -F _comp_cmd_watch wnl
+
+# ex: filetype=sh

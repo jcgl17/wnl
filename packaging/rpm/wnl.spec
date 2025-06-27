@@ -39,13 +39,13 @@ Bind a command with `wnl`, and trigger the command with `wnlctl`.
 %files
 %{_bindir}/wnl
 %{_bindir}/wnlctl
+%{_datadir}/bash-completion/completions/wnl
+%{_datadir}/bash-completion/completions/wnlctl
 # these dir directories seem needed to successfully build for opensuse
 %dir %{_datadir}/fish/
 %dir %{_datadir}/fish/vendor_completions.d/
 %{_datadir}/fish/vendor_completions.d/wnl.fish
 %{_datadir}/fish/vendor_completions.d/wnlctl.fish
-%{_datadir}/bash-completion/completions/wnl
-%{_datadir}/bash-completion/completions/wnlctl
 %{_mandir}/man1/wnl.1.gz
 %{_mandir}/man1/wnlctl.1.gz
 %license LICENSE.md
