@@ -22,85 +22,6 @@ load_rc_file
 
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 
-pidfile() {
-	local slot=$1
-	echo "${RUNTIME_DIR}/wnl_slot_${slot}.pid"
-}
-
-### ARG PARSING {{
-# check if $1 is a number
-if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
-	# if it is, then use it as the slot
-	SLOT=$1
-	# and then shift (remove $1 from args) to have the rest turn into CMD
-	shift
-else
-	# otherwise, find the first available slot
-	AUTOSLOT=1
-	for ((i=1; i <= "$AUTOSLOT_MAX"; i++)); do
-		if [ ! -f "$(pidfile $i)" ]; then
-			SLOT=$i
-			break
-		fi
-	done
-	if [ -z "$SLOT" ]; then
-		echo Error: unable to find an available slot
-		exit 1
-	fi
-fi
-export SLOT
-
-# escape command to preserve user-provided as faithfully as possible
-CMD=$(printf "%q " "$@")
-CMD_RAW="$*"
-# remove trailing space
-CMD="${CMD%" "}"
-### }} ARG PARSING
-
-### CONSTANTS {{
-PIDFILE=$(pidfile "$SLOT")
-# https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
-SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
-SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
-### }} CONSTANTS
-
-# define colors
-# https://unix.stackexchange.com/a/10065
-if test -t 1; then
-	# see if it supports colors...
-	ncolors=$(tput colors)
-	if test -n "$ncolors" && test "$ncolors" -ge 8; then
-		FMT_BOLD="$(tput bold)"; export FMT_BOLD
-		FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
-		FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
-		FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
-		FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
-		FMT_RED="$(tput setaf 1)"; export FMT_RED
-		FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
-		FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
-		FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
-		FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
-		FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
-		FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
-		FMT_GREY="$(tput setaf 8)"; export FMT_GREY
-	fi
-fi
-
-handle_usr1() {
-	SIGNAL_START=1
-}
-
-handle_usr2(){
-	SIGNAL_STOP=1
-}
-
-handle_exit() {
-	# echo removing pidfile
-	rm -f "$PIDFILE"
-	kill "$SLP_PID"
-	hook_exit
-}
-
 diff_time() {
 	t1=$(date -d "$1" +%s 2>/dev/null) || { echo "Bad date: $1" >&2; return 1; }
 	t2=$(date -d "$2" +%s 2>/dev/null) || { echo "Bad date: $2" >&2; return 1; }
@@ -171,8 +92,8 @@ shell_integrations_prompt_start() {
 }
 
 cmd_title() {
-	# 60 is roughly the width of the banner_post (which in longer than banner_pre), minus CMD_TITLE
-	CMD_TITLE_MAXLENGTH=$(("$(tput cols)" - 60))
+	# 63 is roughly the width of the banner_post (which in longer than banner_pre), minus CMD_TITLE
+	CMD_TITLE_MAXLENGTH=$(("$(tput cols)" - 63))
 	test $CMD_TITLE_MAXLENGTH -lt 10 && CMD_TITLE_MAXLENGTH=10
 	excess_title_length="$(("${#CMD_RAW}" - "${CMD_TITLE_MAXLENGTH}"))"
 	if [ "${excess_title_length}" -gt "1" ]; then
@@ -203,19 +124,105 @@ kill_signal() {
 	fi
 }
 
-## MAIN {{
-# make pidfile with locking
-exec 17<>"$PIDFILE"
-if ! flock -n -x 17; then
-	echo "Error: unable to acquire lock on $PIDFILE" >&2
-	exit 1
-fi
-echo $$ > "$PIDFILE"
-test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
+handle_usr1() {
+	SIGNAL_START=1
+}
+
+handle_usr2(){
+	SIGNAL_STOP=1
+}
+
+handle_exit() {
+	# echo removing pidfile
+	rm -f "$PIDFILE"
+	test -n "$SLP_PID" && kill "$SLP_PID"
+	hook_exit
+}
 
 trap handle_usr1 SIGUSR1
 trap handle_usr2 SIGUSR2
 trap handle_exit EXIT
+
+pidfile() {
+	local slot=$1
+	echo "${RUNTIME_DIR}/wnl_slot_${slot}.pid"
+}
+
+function take_lock() {
+	local slot=$1
+	# shellcheck disable=SC2155
+	local pidfile_to_lock="$(pidfile "$slot")"
+	if [ ! -f "$pidfile_to_lock" ]; then
+		exec 17<>"$pidfile_to_lock"
+		if ! flock -n -x 17; then
+			return 2
+		fi
+		echo $$ > "$pidfile_to_lock"
+	else
+		return 1
+	fi
+}
+
+### ARG PARSING {{
+# check if $1 is a number
+if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
+	# if it is, then use it as the slot
+	SLOT=$1
+	# and then shift (remove $1 from args) to have the rest turn into CMD
+	shift
+	take_lock "$SLOT" || echo "Error: unable to acquire lock on $(pidfile "$SLOT")" >&2 && exit 1
+else
+	# otherwise, find the first available slot
+	AUTOSLOT=1
+	for ((i=1; i <= "$AUTOSLOT_MAX"; i++)); do
+		SLOT=$i
+		take_lock "$SLOT" && break
+	done
+	if [ -z "$SLOT" ]; then
+		echo Error: unable to find an available slot
+		exit 1
+	fi
+fi
+export SLOT
+
+# escape command to preserve user-provided as faithfully as possible
+CMD=$(printf "%q " "$@")
+CMD_RAW="$*"
+# remove trailing space
+CMD="${CMD%" "}"
+### }} ARG PARSING
+
+### CONSTANTS {{
+PIDFILE=$(pidfile "$SLOT")
+# https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
+SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
+SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
+### }} CONSTANTS
+
+# define colors
+# https://unix.stackexchange.com/a/10065
+if test -t 1; then
+	# see if it supports colors...
+	ncolors=$(tput colors)
+	if test -n "$ncolors" && test "$ncolors" -ge 8; then
+		FMT_BOLD="$(tput bold)"; export FMT_BOLD
+		FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
+		FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
+		FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
+		FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
+		FMT_RED="$(tput setaf 1)"; export FMT_RED
+		FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
+		FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
+		FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
+		FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
+		FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
+		FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
+		FMT_GREY="$(tput setaf 8)"; export FMT_GREY
+	fi
+fi
+
+## MAIN {{
+test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
 
 sleep infinity &
 SLP_PID=$!
