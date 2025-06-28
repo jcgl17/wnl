@@ -11,7 +11,7 @@ else
 	SLOT=1
 fi
 
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+: "${RUNTIME_DIR:="${XDG_RUNTIME_DIR:-/tmp}"}"
 PIDFILE="${RUNTIME_DIR}/wnl_slot_${SLOT}.pid"
 
 if [ ! -f "$PIDFILE" ]; then
@@ -21,7 +21,7 @@ fi
 
 PID=$(cat "$PIDFILE")
 
-SIGNAL=${SIGNAL:-USR1}
+: "${SIGNAL:=USR1}"
 
 if ! kill -0 "$PID" >/dev/null 2>&1; then
 	echo "Error: process $PID not found" >&2
