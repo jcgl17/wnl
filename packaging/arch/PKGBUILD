@@ -8,6 +8,7 @@ source=("${pkgname}-${pkgver}.tar.gz")
 url="https://codeberg.org/jcgl/wnl"
 sha256sums=('SKIP')
 depends=('util-linux' 'procps-ng' 'ncurses')
+changelog=wnl.changes
 
 package() {
     make -C "${srcdir}/${pkgname}-${pkgver}" install SYSTEM=1 DESTDIR="${pkgdir}"
