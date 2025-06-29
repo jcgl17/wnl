@@ -41,12 +41,12 @@ while IFS= read -r line; do
     commit_subjects+=("$subject")
 
     # Feature/minor version
-    if printf '%s' "$subject" | grep -qE '^feat($.+$)?:'; then
+    if printf '%s' "$subject" | grep -qE '^feat.(.+)?:'; then
       has_feature=true
     fi
 
     # Bugfix/patch version
-    if printf '%s' "$subject" | grep -qE '^fix($.+$)?:'; then
+    if printf '%s' "$subject" | grep -qE '^fix(.+)?:'; then
       has_bugfix=true
     fi
 

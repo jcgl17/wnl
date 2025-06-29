@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# given all the annotated tags are of the form emitted by `generate_release_notes`/`make release`, generate text for a .changes file for OBS
+# https://en.opensuse.org/openSUSE:Creating_a_changes_file_(RPM)
+
+TZ=UTC0 git for-each-ref \
+  --omit-empty \
+  --sort=-creatordate \
+  --format='%(if)%(tag)%(then)-------------------------------------------------------------------
+%(taggerdate:format-local:%a %b %d %H:%M:%S %Z %Y) - %(taggername) %(taggeremail) - %(refname:short)
+INBODY
+%(contents:body)%(end)' \
+  refs/tags | \
+  awk '
+/^-------------------------------------------------------------------$/ {
+  inbody = 0;
+  print;
+  next
+}
+
+/^INBODY/ {
+  print ""; 
+  inbody = 1;
+  next
+}
+
+inbody {
+  $0 = gensub(/^([[:space:]]+)-/, "\\1*", 1)
+  print
+  next
+}
+
+{
+  print
+}
+'

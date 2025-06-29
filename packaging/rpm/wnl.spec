@@ -51,5 +51,3 @@ Bind a command with `wnl`, and trigger the command with `wnlctl`.
 %license LICENSE.md
 
 %changelog
-* Wed Apr 16 2025 j <j@cgl.sh> - 0.1.0-1
-- Initial package creation.

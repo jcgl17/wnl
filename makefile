@@ -51,3 +51,4 @@ link:
 release:
 	./util/generate_release_notes
 	sh -c "git tag $$(./util/generate_release_notes | head -n1) --annotate --sign --file <(./util/generate_release_notes)"
+	./util/generate_obs_changes > ~/code/home:jcgl/wnl_dev/wnl.changes
