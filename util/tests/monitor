@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+SESSION="wnl"
+
+if ! tmux has-session -t $SESSION 2>/dev/null; then
+  tmux new-session -d -s $SESSION
+else
+  echo "Reusing existing tmux session '$SESSION'"
+fi
+
+tmux attach -t $SESSION

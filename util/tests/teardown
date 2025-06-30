@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+SESSION="wnl"
+RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}/wnltest
+
+set -x
+
+tmux kill-session -t "$SESSION"
+rm -vrf "${RUNTIME_DIR:?RUNTIME_DIR not set}"

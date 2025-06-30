@@ -15,11 +15,9 @@ BuildRequires: make
 # https://en.opensuse.org/openSUSE:Build_Service_cross_distribution_howto
 %if %{defined suse_version}
 Requires: util-linux
-Requires: procps
 Requires: ncurses-utils
 %else
 Requires: util-linux-core
-Requires: procps-ng
 Requires: ncurses
 %endif
 

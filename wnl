@@ -6,19 +6,19 @@ load_rc_file() {
 }
 
 ### CONFIGURATION {{
-: "${RC_FILE:=${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}"
-: "${EXIT_AFTER_NONZERO:=0}"
-: "${SHELL_CMD:="$SHELL -c"}"
-: "${HOOK_PRE:=}"
-: "${HOOK_POST:=}"
-: "${HOOK_STARTUP:=}"
-: "${HOOK_EXIT:=}"
-: "${BANNER_PRE_ENABLE:=1}"
-: "${BANNER_POST_ENABLE:=1}"
-: "${SHELL_INTEGRATION_ENABLE:=1}"
-: "${AUTOSLOT_MAX:=10}"
-: "${RUNTIME_DIR:="${XDG_RUNTIME_DIR:-/tmp}"}"
 load_rc_file
+RC_FILE=${RC_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}
+EXIT_AFTER_NONZERO=${EXIT_AFTER_NONZERO:-0}
+SHELL_CMD=${SHELL_CMD:-"$SHELL -c"}
+HOOK_PRE=${HOOK_PRE:-}
+HOOK_POST=${HOOK_POST:-}
+HOOK_STARTUP=${HOOK_STARTUP:-}
+HOOK_EXIT=${HOOK_EXIT:-}
+BANNER_PRE_ENABLE=${BANNER_PRE_ENABLE:-1}
+BANNER_POST_ENABLE=${BANNER_POST_ENABLE:-1}
+SHELL_INTEGRATION_ENABLE=${SHELL_INTEGRATION_ENABLE:-1}
+AUTOSLOT_MAX=${AUTOSLOT_MAX:-10}
+RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
 ### }} CONFIGURATION
 
 diff_time() {
@@ -67,19 +67,19 @@ banner_post() {
 }
 
 hook_pre() {
-	test -n "$HOOK_PRE" && $SHELL_CMD "$HOOK_PRE"
+	test -n "$HOOK_PRE" && ( $SHELL_CMD "$HOOK_PRE" || echo HOOK_PRE exited with code $?. continuing. )
 }
 
 hook_post() {
-	test -n "$HOOK_POST" && $SHELL_CMD "$HOOK_POST"
+	test -n "$HOOK_POST" && ( $SHELL_CMD "$HOOK_POST" || echo HOOK_POST exited with code $?. continuing. )
 }
 
 hook_startup() {
-	test -n "$HOOK_STARTUP" && $SHELL_CMD "$HOOK_STARTUP"
+	test -n "$HOOK_STARTUP" && ( $SHELL_CMD "$HOOK_STARTUP" || echo HOOK_STARTUP exited with code $?. continuing. )
 }
 
 hook_exit() {
-	test -n "$HOOK_EXIT" && $SHELL_CMD "$HOOK_EXIT"
+	test -n "$HOOK_EXIT" && ( $SHELL_CMD "$HOOK_EXIT" || echo HOOK_EXIT exited with code $?. continuing. )
 }
 
 shell_integrations_cmd_start() {
@@ -105,7 +105,7 @@ cmd_title() {
 	echo "$CMD_TITLE"
 }
 
-# kill_signal decides what signal should be sent to kill SHELL_CHILD
+# kill_signal decides what signal should be sent to kill RUNNING_CMD
 kill_signal() {
 	cmd=$1
 	# if user has specified a kill signal, user that
@@ -144,6 +144,7 @@ trap handle_exit EXIT
 
 pidfile() {
 	local slot=$1
+	mkdir -p "${RUNTIME_DIR}"
 	echo "${RUNTIME_DIR}/wnl_slot_${slot}.pid"
 }
 
@@ -157,6 +158,7 @@ function take_lock() {
 			return 2
 		fi
 		echo $$ > "$pidfile_to_lock"
+		PIDFILE=$(pidfile "$SLOT")
 	else
 		return 1
 	fi
@@ -169,7 +171,7 @@ if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
 	SLOT=$1
 	# and then shift (remove $1 from args) to have the rest turn into CMD
 	shift
-	take_lock "$SLOT" || echo "Error: unable to acquire lock on $(pidfile "$SLOT")" >&2 && exit 1
+	take_lock "$SLOT" || ( echo "Error: unable to acquire lock on $(pidfile "$SLOT")" >&2 && exit 1 )
 else
 	# otherwise, find the first available slot
 	AUTOSLOT=1
@@ -192,10 +194,26 @@ CMD="${CMD%" "}"
 ### }} ARG PARSING
 
 ### CONSTANTS {{
-PIDFILE=$(pidfile "$SLOT")
 # https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
 SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
 SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
+
+# stop_signal/SIGUSR2 handling relies on identifying the process being run
+# ($RUNNING_CMD). standard shells (e.g. bash) when called with `-c` do an
+# immediate `exec`. The pid can then easily be found with `RUNNING_CMD=$!`.
+#
+# However, fish does a `fork` then `exec`. So pgrepping for the child process
+# would becomes necessary. The fish devs are aware of this difference in
+# behavior, but will not fix:
+# https://github.com/fish-shell/fish-shell/issues/6902
+#
+# So the workaround is to insert a little `exec` into the command whenever fish
+# is the shell in use ¯\_(ツ)_/¯
+if [[ "$SHELL_CMD" =~ .*fish\ -c ]]; then
+	EXEC_IF_FISH="exec "
+else
+	EXEC_IF_FISH=""
+fi
 ### }} CONSTANTS
 
 # define colors
@@ -235,13 +253,7 @@ while true; do
 	if [ "$SIGNAL_STOP" -eq "1" ]; then
 		# if RUNNING_CMD is defined and it's running, then kill it
 		if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
-			# Kill the actual process the user specified, rather than trying to kill the shell 
-			# _running_ that command.
-			# kill -INT "$RUNNING_CMD"
-			SHELL_CHILD=$(pgrep --parent "$RUNNING_CMD")
-			if [ -n "$SHELL_CHILD" ]; then
-				kill -"$(kill_signal "$CMD_RAW")" "$SHELL_CHILD"
-			fi
+			kill -"$(kill_signal "$CMD_RAW")" "$RUNNING_CMD"
 			wait -n "$RUNNING_CMD"
 			# export EXIT_CODE for consumption by hook
 			export EXIT_CODE=$?
@@ -256,7 +268,12 @@ while true; do
 			banner_pre
 			hook_pre
 			shell_integrations_cmd_start
-			$SHELL_CMD "${CMD}" >&1 2>&2 &
+			(
+				# this `set -m` crucially enables job control for this backgrounded subshell.
+				# without it, SIGINT handling doesn't work.
+				set -m
+				exec $SHELL_CMD "$EXEC_IF_FISH${CMD}" >&1 2>&2
+			) &
 			RUNNING_CMD=$!
 		fi
 	fi

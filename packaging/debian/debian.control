@@ -7,7 +7,7 @@ Homepage: https://codeberg.org/jcgl/wnl
 
 Package: wnl
 Architecture: any
-Depends: util-linux, procps, ncurses-bin
+Depends: util-linux, ncurses-bin
 Description: Enables global keyboard shortcuts for your shell
  Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line.
  Bind a command with `wnl`, and trigger the command with `wnlctl`.

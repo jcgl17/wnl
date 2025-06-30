@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+TEST_SHELL=/bin/bash
+SESSION="wnl"
+WINDOW=0
+PANE_TEST1=0
+PANE_TEST2=1
+PANE_EXECUTOR=2
+SLOT_TEST1=17
+SLOT_TEST2=18
+RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}/wnltest
+# PIDFILE_TEST1="${RUNTIME_DIR}/wnl_slot_${SLOT_TEST1}.pid"
+
+if ! tmux has-session -t $SESSION 2>/dev/null; then
+  tmux new-session -d -s $SESSION
+else
+  echo "Reusing existing tmux session '$SESSION'"
+fi
+
+# Ensure we start from a clean first window
+tmux send-keys -t $SESSION:0 'clear' C-m
+
+while [ "$(tmux list-panes -t "$SESSION:$WINDOW" 2>/dev/null | wc -l | tr -d ' ')" -lt 3 ]; do
+  tmux split-window -h -t "$SESSION:$WINDOW"
+done
+
+# configure
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST1    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}; $TEST_SHELL" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST2    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}; $TEST_SHELL" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}; $TEST_SHELL" C-m
+
+# start the test instances
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST1 "wnl $SLOT_TEST1 sleep 1" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST2 "wnl $SLOT_TEST2 sleep 1" C-m
+sleep 0.5
+
+# run the tests
+tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST1" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST2; sleep 0.1; SIGNAL=USR2 wnlctl $SLOT_TEST2" C-m
