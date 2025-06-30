@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 LAST_TAG=$(git describe --abbrev=0) || ( echo no annotated tags found on this branch >&2 ; exit 1 )
 
