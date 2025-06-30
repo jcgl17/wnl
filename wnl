@@ -6,8 +6,8 @@ load_rc_file() {
 }
 
 ### CONFIGURATION {{
-load_rc_file
 RC_FILE=${RC_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}
+load_rc_file
 EXIT_AFTER_NONZERO=${EXIT_AFTER_NONZERO:-0}
 SHELL_CMD=${SHELL_CMD:-"$SHELL -c"}
 HOOK_PRE=${HOOK_PRE:-}
@@ -67,11 +67,11 @@ banner_post() {
 }
 
 hook_pre() {
-	test -n "$HOOK_PRE" && ( $SHELL_CMD "$HOOK_PRE" || echo HOOK_PRE exited with code $?. continuing. )
+	test -n "$HOOK_PRE"     && ( $SHELL_CMD "$HOOK_PRE"     || echo HOOK_PRE     exited with code $?. continuing. )
 }
 
 hook_post() {
-	test -n "$HOOK_POST" && ( $SHELL_CMD "$HOOK_POST" || echo HOOK_POST exited with code $?. continuing. )
+	test -n "$HOOK_POST"    && ( $SHELL_CMD "$HOOK_POST"    || echo HOOK_POST    exited with code $?. continuing. )
 }
 
 hook_startup() {
@@ -79,7 +79,7 @@ hook_startup() {
 }
 
 hook_exit() {
-	test -n "$HOOK_EXIT" && ( $SHELL_CMD "$HOOK_EXIT" || echo HOOK_EXIT exited with code $?. continuing. )
+	test -n "$HOOK_EXIT"    && ( $SHELL_CMD "$HOOK_EXIT"    || echo HOOK_EXIT    exited with code $?. continuing. )
 }
 
 shell_integrations_cmd_start() {
