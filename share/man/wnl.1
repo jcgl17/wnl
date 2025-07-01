@@ -91,7 +91,7 @@ picks the first free slot (counting up from 1).
 defaults to slot 1.
 .El
 .Sh ENVIRONMENT
-.Bl -tag -width SIGNAL
+.Bl -tag -width WIDTH
 .It Ev SIGNAL
 Used with
 .Nm wnlctl\c .
@@ -108,13 +108,30 @@ to tell
 to terminate execution. Defaults to
 .Cm USR1\c .
 .El
-.Bl -tag -width DOUBLE_TAP_REQUIRED
+.Bl -tag -width WIDTH
 .It Ev DOUBLE_TAP_REQUIRED
 Used with
 .Nm wnl\c .
 If true, two quick signals from
 .Nm wnlctl
 are required before triggering
+.Ar COMMAND\c .
+Choose
+.Cm true
+or
+.Cm false\c .
+Defaults to
+.Cm false\c .
+.El
+.Bl -tag -width WIDTH
+.It Ev RESTART_MODE
+Used with
+.Nm wnl\c .
+If true, a trigger from
+.Nm wnlctl
+while
+.Ar COMMAND
+is already running will restart
 .Ar COMMAND\c .
 Choose
 .Cm true

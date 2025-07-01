@@ -21,6 +21,7 @@ AUTOSLOT_MAX=${AUTOSLOT_MAX:-10}
 RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
 DOUBLE_TAP_REQUIRED=${DOUBLE_TAP_REQUIRED:-false}
 DOUBLE_TAP_TIMEOUT_MS=${DOUBLE_TAP_TIMEOUT_MS:-200}
+RESTART_MODE=${RESTART_MODE:-false}
 ### }} CONFIGURATION
 
 diff_time() {
@@ -52,17 +53,27 @@ banner_pre() {
 }
 
 banner_post() {
-	STOP_TIME=$(date +%X)
+	local stop_time
+	stop_time=$(date +%X)
 	test "$BANNER_POST_ENABLE" -eq "0" && return
+	local fmt_normal=${FMT_NORMAL}
 	if [ "$EXIT_CODE" -ne 0 ]; then
-		bracket_color="${FMT_RED}"
-		exit_code_color="${FMT_RED}${FMT_BOLD}"
+		if ${restarting:-false}; then
+			local bracket_color="${FMT_GREY}"
+			local exit_code_color="${FMT_GREY}${FMT_BOLD}"
+			local restarting_notice="(restarting)"
+			fmt_normal=${FMT_NORMAL}${FMT_GREY}
+		else
+			local bracket_color="${FMT_RED}"
+			local exit_code_color="${FMT_RED}${FMT_BOLD}"
+			local restarting_notice=""
+		fi
 	else
-		bracket_color="${FMT_GREEN}"
-		exit_code_color="${FMT_NORMAL}"
+		local bracket_color="${FMT_GREEN}"
+		local exit_code_color="${FMT_NORMAL}"
 	fi
 	shell_integrations_prompt_start
-	echo "${bracket_color}[[ ${FMT_NORMAL}${FMT_GREY}finished ${FMT_NORMAL}$(cmd_title)${FMT_GREY} with exit code ${exit_code_color}${EXIT_CODE}${FMT_NORMAL} ${FMT_GREY}at${FMT_NORMAL} ${STOP_TIME}(+$(diff_time "$START_TIME" "$STOP_TIME")) ${FMT_GREY}in slot${FMT_NORMAL} $SLOT ${bracket_color}]]${FMT_NORMAL}"
+	echo "${bracket_color}[[ ${fmt_normal}${FMT_GREY}finished ${fmt_normal}$(cmd_title)${FMT_GREY} with exit code ${exit_code_color}${EXIT_CODE}${restarting_notice}${fmt_normal} ${FMT_GREY}at${fmt_normal} ${stop_time}(+$(diff_time "$START_TIME" "$stop_time")) ${FMT_GREY}in slot${fmt_normal} $SLOT ${bracket_color}]]${fmt_normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
@@ -179,6 +190,36 @@ function take_lock() {
 	fi
 }
 
+function stop_command() {
+	# if RUNNING_CMD is defined and it's running, then kill it
+	if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
+		kill -"$(kill_signal "$CMD_RAW")" "$RUNNING_CMD"
+		wait -n "$RUNNING_CMD"
+		# export EXIT_CODE for consumption by hook
+		export EXIT_CODE=$?
+		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			banner_post
+			hook_post
+		fi
+	fi
+}
+
+function start_command() {
+	# if RUNNING_CMD is not defined or it's not running, then start it
+	if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+		banner_pre
+		hook_pre
+		shell_integrations_cmd_start
+		(
+			# this `set -m` crucially enables job control for this backgrounded subshell.
+			# without it, SIGINT handling doesn't work.
+			set -m
+			exec $SHELL_CMD "$EXEC_IF_FISH${CMD}" >&1 2>&2
+		) &
+		RUNNING_CMD=$!
+	fi
+}
+
 ### ARG PARSING {{
 # check if $1 is a number
 if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
@@ -266,31 +307,14 @@ while true; do
 	load_rc_file
 	# echo eval state begin: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
 	if [ "$SIGNAL_STOP" -eq "1" ]; then
-		# if RUNNING_CMD is defined and it's running, then kill it
-		if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
-			kill -"$(kill_signal "$CMD_RAW")" "$RUNNING_CMD"
-			wait -n "$RUNNING_CMD"
-			# export EXIT_CODE for consumption by hook
-			export EXIT_CODE=$?
-			if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
-				banner_post
-				hook_post
-			fi
-		fi
+		stop_command
 	elif [ "$SIGNAL_START" -eq 1 ]; then
-		# if RUNNING_CMD is not defined or it's not running, then start it
-		if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
-			banner_pre
-			hook_pre
-			shell_integrations_cmd_start
-			(
-				# this `set -m` crucially enables job control for this backgrounded subshell.
-				# without it, SIGINT handling doesn't work.
-				set -m
-				exec $SHELL_CMD "$EXEC_IF_FISH${CMD}" >&1 2>&2
-			) &
-			RUNNING_CMD=$!
+		if $RESTART_MODE; then
+			restarting=true
+			stop_command
+			restarting=false
 		fi
+		start_command
 	fi
 	SIGNAL_START=0
 	SIGNAL_STOP=0

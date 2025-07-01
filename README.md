@@ -162,6 +162,8 @@ hi from slot 2!
 
 `DOUBLE_TAP_REQUIRED`: Used with `wnl`. If true, two signals from `wnlctl` are required before triggering `COMMAND`. Choose `true` or `false`. Defaults to `false`.
 
+`RESTART_MODE`: Used with `wnl`. If true, a trigger from `wnlctl` while `COMMAND` is already running will restart `COMMAND`. Choose `true` or `false`. Defaults to `false`.
+
 ### Configuration
 
 User configuration file: `~/.config/wnl/wnlrc`
@@ -197,7 +199,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [ ] Switch from signals for IPC to e.g. JSON-RPC over named pipes or unix sockets
   - [ ] `wnlctl` can instruct `wnl` to send arbitrary signals to command executions
   - [ ] Send text to command executions' `stdin`
-- [ ] Add a mode to kill-and-restart when triggering a still-running command, rather than doing nothing
+- [x] Add RESTART_MODE to restart a still-running command, rather than doing nothing
 - [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
 - [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
 - [x] Pre- and post-exec hooks
@@ -209,7 +211,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [x] Arch
   - [x] Debian
   - [x] RPM
-- [x] Add a config that requires multiple, quick signals from `wnlctl` to prevent accidental/fat-fingered triggers
+- [x] Add DOUBLE_TAP_REQUIRED to require multiple, quick signals from `wnlctl` to prevent accidental/fat-fingered triggers
 
 ## The problem space
 
