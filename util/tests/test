@@ -4,9 +4,11 @@ SESSION="wnl"
 WINDOW=0
 PANE_TEST1=0
 PANE_TEST2=1
-PANE_EXECUTOR=2
+PANE_TEST3=2
+PANE_EXECUTOR=3
 SLOT_TEST1=17
 SLOT_TEST2=18
+SLOT_TEST3=19
 RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}/wnltest
 # PIDFILE_TEST1="${RUNTIME_DIR}/wnl_slot_${SLOT_TEST1}.pid"
 
@@ -19,20 +21,28 @@ fi
 # Ensure we start from a clean first window
 tmux send-keys -t $SESSION:0 'clear' C-m
 
-while [ "$(tmux list-panes -t "$SESSION:$WINDOW" 2>/dev/null | wc -l | tr -d ' ')" -lt 3 ]; do
+while [ "$(tmux list-panes -t "$SESSION:$WINDOW" 2>/dev/null | wc -l | tr -d ' ')" -lt 4 ]; do
   tmux split-window -h -t "$SESSION:$WINDOW"
 done
 
+tmux select-layout -t $SESSION even-vertical
+
 # configure
-tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST1    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}; $TEST_SHELL" C-m
-tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST2    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}; $TEST_SHELL" C-m
-tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}; $TEST_SHELL" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST1    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR} DOUBLE_TAP_REQUIRED=false; $TEST_SHELL" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST2    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR} DOUBLE_TAP_REQUIRED=false; $TEST_SHELL" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST3    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR} DOUBLE_TAP_REQUIRED=true ; $TEST_SHELL" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}                          ; $TEST_SHELL" C-m
 
 # start the test instances
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST1 "wnl $SLOT_TEST1 sleep 1" C-m
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST2 "wnl $SLOT_TEST2 sleep 1" C-m
-sleep 0.5
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST3 "wnl $SLOT_TEST3 sleep 1" C-m
+sleep 1
 
 # run the tests
+# should result in a single, successful execution
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST1" C-m
+# should result in a single, cancelled execution with exit code 130
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST2; sleep 0.1; SIGNAL=USR2 wnlctl $SLOT_TEST2" C-m
+# should result in no execution
+tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST3; sleep 1; wnlctl $SLOT_TEST3" C-m

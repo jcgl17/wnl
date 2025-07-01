@@ -39,7 +39,7 @@ from another shell
 .Pp
 Or bind
 .Cm wnlctl 1
-to a keyboard shortcut within your Desktop Environment.
+to a keyboard shortcut within your desktop environment.
 .It
 (optional) Interrupt
 .Ar COMMAND
@@ -93,6 +93,8 @@ defaults to slot 1.
 .Sh ENVIRONMENT
 .Bl -tag -width SIGNAL
 .It Ev SIGNAL
+Used with
+.Nm wnlctl\c .
 The signal that is sent to
 .Nm wnl\c .
 Either
@@ -103,9 +105,23 @@ to start command execution, or
 .Cm USR2
 to tell
 .Nm wnl
-to terminate execution.
-.Cm USR1
-is sent if this is not specified.
+to terminate execution. Defaults to
+.Cm USR1\c .
+.El
+.Bl -tag -width DOUBLE_TAP_REQUIRED
+.It Ev DOUBLE_TAP_REQUIRED
+Used with
+.Nm wnl\c .
+If true, two quick signals from
+.Nm wnlctl
+are required before triggering
+.Ar COMMAND\c .
+Choose
+.Cm true
+or
+.Cm false\c .
+Defaults to
+.Cm false\c .
 .El
 .Sh FILES
 User configuration file:
@@ -149,10 +165,10 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
 Run tests in the next free slot:
 .Dl $ wnl make test
 .It
-Trigger slot 1 (for example, bound to Ctrl-F1 in your Desktop Environment):
+Trigger slot 1 (for example, bound to Ctrl-F1 in your desktop environment):
 .Dl $ wnlctl 1
 .It
-Abort the command in slot 1 (for example, bound to Ctrl-Shift-F1 in your Desktop Environment):
+Abort the command in slot 1 (for example, bound to Ctrl-Shift-F1 in your desktop environment):
 .Dl $ SIGNAL=USR2 wnlctl 1
 .El
 .Sh SEE ALSO

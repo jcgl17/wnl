@@ -19,6 +19,8 @@ BANNER_POST_ENABLE=${BANNER_POST_ENABLE:-1}
 SHELL_INTEGRATION_ENABLE=${SHELL_INTEGRATION_ENABLE:-1}
 AUTOSLOT_MAX=${AUTOSLOT_MAX:-10}
 RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
+DOUBLE_TAP_REQUIRED=${DOUBLE_TAP_REQUIRED:-false}
+DOUBLE_TAP_TIMEOUT_MS=${DOUBLE_TAP_TIMEOUT_MS:-200}
 ### }} CONFIGURATION
 
 diff_time() {
@@ -67,18 +69,22 @@ banner_post() {
 }
 
 hook_pre() {
+	# shellcheck disable=SC2291
 	test -n "$HOOK_PRE"     && ( $SHELL_CMD "$HOOK_PRE"     || echo HOOK_PRE     exited with code $?. continuing. )
 }
 
 hook_post() {
+	# shellcheck disable=SC2291
 	test -n "$HOOK_POST"    && ( $SHELL_CMD "$HOOK_POST"    || echo HOOK_POST    exited with code $?. continuing. )
 }
 
 hook_startup() {
+	# shellcheck disable=SC2291
 	test -n "$HOOK_STARTUP" && ( $SHELL_CMD "$HOOK_STARTUP" || echo HOOK_STARTUP exited with code $?. continuing. )
 }
 
 hook_exit() {
+	# shellcheck disable=SC2291
 	test -n "$HOOK_EXIT"    && ( $SHELL_CMD "$HOOK_EXIT"    || echo HOOK_EXIT    exited with code $?. continuing. )
 }
 
@@ -124,7 +130,17 @@ kill_signal() {
 }
 
 handle_usr1() {
-	SIGNAL_START=1
+	if $DOUBLE_TAP_REQUIRED; then
+		now=$(date +%s)
+		if [[ -v last_double_tap ]] && (( now <= (last_double_tap + DOUBLE_TAP_TIMEOUT_MS/1000 ) )); then
+			SIGNAL_START=1
+			last_double_tap=0
+		else
+			last_double_tap=$now
+		fi
+	else
+		SIGNAL_START=1
+	fi
 }
 
 handle_usr2(){
@@ -132,7 +148,6 @@ handle_usr2(){
 }
 
 handle_exit() {
-	# echo removing pidfile
 	rm -f "$PIDFILE"
 	test -n "$SLP_PID" && kill "$SLP_PID"
 	hook_exit

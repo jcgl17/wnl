@@ -1,7 +1,8 @@
 # wnl—Wait 'n' Listen
 
-wnl helps create a ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflow:
-you bind a frequently-run command with `wnl`, then trigger it from anywhere with `wnlctl`.
+wnl helps create a ["Unix as IDE"](https://blog.sanctum.geek.nz/series/unix-as-ide/) workflow.
+You bind a frequently-run command with `wnl`, then trigger it from anywhere with `wnlctl`.
+Optionally configure a hotkey in your desktop environment, and you have keyboard shortcuts for ad-hoc shell commands.
 
 [![asciicast](https://asciinema.org/a/716085.svg)](https://asciinema.org/a/716085)
 
@@ -20,7 +21,7 @@ done
 me@pc:~$ wnl make test
 # nothing happens until you trigger wnl with the `wnlctl` command,
 # e.g. in another shell.
-# it's useful to bind `wnlctl` to a global shortcut in your Desktop Environment
+# it's useful to bind `wnlctl` to a global shortcut in your desktop environment
 running tests...
 done
 [[ finished with exit code 0 at 13:07:25 ]]
@@ -48,7 +49,7 @@ For example:
     $ wnlctl 1
     ```
 
-   Or bind `wnlctl 1` to a keyboard shortcut within your Desktop Environment.
+   Or bind `wnlctl 1` to a keyboard shortcut within your desktop environment.
 
 3. (optional) Interrupt `COMMAND` with `wnlctl`
 
@@ -123,12 +124,11 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 
 Please report any issues you may encounter with the packages!
 
-
 ## Usage
 
 ### Syntax
 
-```
+```plain
 wnl [SLOT_ID] COMMAND [COMMAND_ARGUMENTS...]
 wnlctl [SLOT_ID]
 ```
@@ -158,7 +158,9 @@ hi from slot 2!
 
 ### Environment
 
-`SIGNAL`: The signal that `wnlctl` sends to `wnl`. Either `USR1` to tell `wnl` to start command execution, or `USR2` to tell `wnl` to terminate execution. Defaults to `USR1`.
+`SIGNAL`: Used with `wnlctl`. The signal that is sent to `wnl`. Either `USR1` to tell `wnl` to start command execution, or `USR2` to tell `wnl` to terminate execution. Defaults to `USR1`.
+
+`DOUBLE_TAP_REQUIRED`: Used with `wnl`. If true, two signals from `wnlctl` are required before triggering `COMMAND`. Choose `true` or `false`. Defaults to `false`.
 
 ### Configuration
 
@@ -192,9 +194,9 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [x] Automatically use first available slot if slot ID not specified
 - [x] Allow sending SIGINT to command executions
 - [ ] Richer controls from `wnlctl`
-  - [ ] Named pipes instead of signals for IPC
-  - [ ] Custom signals (e.g. SIGTERM) to command executions
-  - [ ] Text to command executions' `stdin`
+  - [ ] Switch from signals for IPC to e.g. JSON-RPC over named pipes or unix sockets
+  - [ ] `wnlctl` can instruct `wnl` to send arbitrary signals to command executions
+  - [ ] Send text to command executions' `stdin`
 - [ ] Add a mode to kill-and-restart when triggering a still-running command, rather than doing nothing
 - [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
 - [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes
@@ -207,7 +209,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [x] Arch
   - [x] Debian
   - [x] RPM
-- [ ] Add a config that requires multiple, quick signals from `wnlctl` to prevent accidental/fat-fingered triggers
+- [x] Add a config that requires multiple, quick signals from `wnlctl` to prevent accidental/fat-fingered triggers
 
 ## The problem space
 
@@ -237,7 +239,7 @@ You are writing an application and want to frequently deploy from your workstati
 Deployment isn't sufficiently fast/cheap/safe, so it doesn't make sense to trigger a deploy whenever you save in your editor.
 Normally, you work in your text editor, and then periodically switch to a shell and deploy with `make deploy`.
 
-To set up wnl, you bind `wnlctl` to `Ctrl-F1`, and `SIGNAL=USR2 wnlctl` to `Ctrl-Super-F1` in your Desktop Environment.
+To set up wnl, you bind `wnlctl` to `Ctrl-F1`, and `SIGNAL=USR2 wnlctl` to `Ctrl-Super-F1` in your desktop environment.
 Then, when you start to work on your application, you run `wnl make deploy` in a shell.
 At any point, you can hit `Ctrl-F1` to run your deployment, and `Ctrl-Super-F1` to abort the deployment.
 
@@ -247,7 +249,7 @@ You're writing some config management code like Ansible or Terraform/OpenTofu.
 Frequently, you run `terraform apply -auto-approve`.
 Sometimes, you also run a diagnostic like `curl https://dev.example.com/api/healthz -ik`.
 
-With wnl, you'd use your Desktop Environment to set up shortcuts for a couple different slots:
+With wnl, you'd use your desktop environment to set up shortcuts for a couple different slots:
 
 | Shortcut      | Command                | Description                                             |
 | ------------- | ---------------------- | ------------------------------------------------------- |
