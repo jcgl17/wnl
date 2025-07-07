@@ -81,22 +81,22 @@ banner_post() {
 
 hook_pre() {
 	# shellcheck disable=SC2291
-	test -n "$HOOK_PRE"     && ( $SHELL_CMD "$HOOK_PRE"     || echo HOOK_PRE     exited with code $?. continuing. )
+	test -n "$HOOK_PRE"     && { $SHELL_CMD "$HOOK_PRE"     || echo HOOK_PRE     exited with code $?. continuing.; }
 }
 
 hook_post() {
 	# shellcheck disable=SC2291
-	test -n "$HOOK_POST"    && ( $SHELL_CMD "$HOOK_POST"    || echo HOOK_POST    exited with code $?. continuing. )
+	test -n "$HOOK_POST"    && { $SHELL_CMD "$HOOK_POST"    || echo HOOK_POST    exited with code $?. continuing.; }
 }
 
 hook_startup() {
 	# shellcheck disable=SC2291
-	test -n "$HOOK_STARTUP" && ( $SHELL_CMD "$HOOK_STARTUP" || echo HOOK_STARTUP exited with code $?. continuing. )
+	test -n "$HOOK_STARTUP" && { $SHELL_CMD "$HOOK_STARTUP" || echo HOOK_STARTUP exited with code $?. continuing.; }
 }
 
 hook_exit() {
 	# shellcheck disable=SC2291
-	test -n "$HOOK_EXIT"    && ( $SHELL_CMD "$HOOK_EXIT"    || echo HOOK_EXIT    exited with code $?. continuing. )
+	test -n "$HOOK_EXIT"    && { $SHELL_CMD "$HOOK_EXIT"    || echo HOOK_EXIT    exited with code $?. continuing.; }
 }
 
 shell_integrations_cmd_start() {
@@ -227,7 +227,7 @@ if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
 	SLOT=$1
 	# and then shift (remove $1 from args) to have the rest turn into CMD
 	shift
-	take_lock "$SLOT" || ( echo "Error: unable to acquire lock on $(pidfile "$SLOT")" >&2 && exit 1 )
+	take_lock "$SLOT" || { echo "Error: unable to acquire lock on $(pidfile "$SLOT")" >&2 && exit 1; }
 else
 	# otherwise, find the first available slot
 	AUTOSLOT=1
