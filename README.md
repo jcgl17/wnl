@@ -122,6 +122,9 @@ Download the packages or add the openSUSE Build Service repository [here](https:
 - openSUSE
 - Ubuntu
 
+It's recommended to follow the instructions for "Add repository and install manually."
+If instead you choose "Grab binary package directly," you'll need to install the package with your package manager, such as with `pacman -U /path/to/wnl*.pkg.tar.zst` for Arch.
+
 Please report any issues you may encounter with the packages!
 
 ## Usage
