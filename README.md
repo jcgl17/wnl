@@ -73,6 +73,7 @@ When `COMMAND` is not running, `wnl` will sit and wait until `wnlctl` triggers i
 - [Usage](#usage)
   - [Syntax](#syntax)
   - [Slots](#slots)
+  - [SSH Mode](#ssh-mode)
   - [Options](#options)
   - [Environment](#environment)
   - [Configuration](#configuration)
@@ -102,13 +103,24 @@ Alternatively, you can just put these two shell scripts—`wnl` and `wnlctl`—i
 - [`flock`](https://www.man7.org/linux/man-pages/man1/flock.1.html)
   - `util-linux` package on Arch
   - `util-linux` package on Debian
-  - `util-linux` package on openSUSE
   - `util-linux-core` package on Fedora
+  - `util-linux` package on openSUSE
 - [`tput`](https://www.man7.org/linux/man-pages/man1/tput.1.html)
   - `ncurses` package on Arch
   - `ncurses-bin` package on Debian
-  - `ncurses-utils` package on openSUSE
   - `ncurses` package on Fedora
+  - `ncurses-utils` package on openSUSE
+- [`pgrep`](https://www.man7.org/linux/man-pages/man1/pgrep.1.html) and
+  [`pkill`](https://www.man7.org/linux/man-pages/man1/pkill.1.html)
+  - `procps-ng` package on Arch
+  - `procps` package on Debian
+  - `procps-ng` package on Fedora
+  - `procps` package on openSUSE
+- [`socat`](https://linux.die.net/man/1/socat)
+  - `socat` package on Arch
+  - `socat` package on Debian
+  - `socat` package on Fedora
+  - `socat` package on openSUSE
 
 ### Packages
 
@@ -133,6 +145,7 @@ Please report any issues you may encounter with the packages!
 
 ```plain
 wnl [SLOT_ID] COMMAND [COMMAND_ARGUMENTS...]
+wnl [SLOT_ID] ssh [REMOTE_SLOT_ID] [SSH_ARGUMENTS...]
 wnlctl [SLOT_ID]
 ```
 
@@ -153,11 +166,32 @@ hi from slot 2!
 [[ finished echo hi from slot 2! with exit code 0 at 10:12:29 in slot 2 ]]
 ```
 
+### SSH Mode
+
+The ssh syntax shown above allows you to use wnlctl locally to trigger an instance of wnl running on a remote host.
+An interactive SSH session will be opened to the host specified in SSH_ARGUMENTS....
+Once inside that SSH session, you will have to manually run `wnl [REMOTE_SLOT_ID] COMMAND`.
+
+```command
+# you'd rarely want to manually specify REMOTE_SLOT_ID (3 here),
+# but it's an option
+user@localhost:~$ wnl 2 ssh 3 remotehost.example.com
+enter in 'wnl 1 <yourcommand>'
+user@remotehost:~$ wnl 3 echo hi on a remote host!
+# you trigger slot 2 with wnlctl on your local machine
+hi on a remote host!
+```
+
+wnl must already be installed on the remote host.
+
 ### Options
 
 `SLOT_ID`: Numeric identifier of the slot.
 `wnl` defaults to the first unused slot (counting up from 1).
 `wnlctl` defaults to slot 1.
+
+`REMOTE_SLOT_ID`: In SSH mode, numeric identifier of the slot used on the remote host.
+By default, it is the same as `SLOT_ID`.
 
 ### Environment
 
@@ -199,7 +233,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [x] Automatically use first available slot if slot ID not specified
 - [x] Allow sending SIGINT to command executions
 - [ ] Richer controls from `wnlctl`
-  - [ ] Switch from signals for IPC to e.g. JSON-RPC over named pipes or unix sockets
+  - [x] Switch from signals for IPC to text over unix stream sockets
   - [ ] `wnlctl` can instruct `wnl` to send arbitrary signals to command executions
   - [ ] Send text to command executions' `stdin`
 - [x] Add RESTART_MODE to restart a still-running command, rather than doing nothing
@@ -215,6 +249,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [x] Debian
   - [x] RPM
 - [x] Add DOUBLE_TAP_REQUIRED to require multiple, quick signals from `wnlctl` to prevent accidental/fat-fingered triggers
+- [x] Add `wnl ssh` subcommand
 
 ## The problem space
 

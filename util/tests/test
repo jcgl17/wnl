@@ -13,7 +13,6 @@ SLOT_TEST2=12
 SLOT_TEST3=13
 SLOT_TEST4=14
 RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}/wnltest
-# PIDFILE_TEST1="${RUNTIME_DIR}/wnl_slot_${SLOT_TEST1}.pid"
 
 if ! tmux has-session -t $SESSION 2>/dev/null; then
   tmux new-session -d -s $SESSION
@@ -48,7 +47,7 @@ sleep 1
 # should result in a single, successful execution
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST1 &" C-m
 # should result in a single, cancelled execution with exit code 130
-tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST2; sleep 0.1; SIGNAL=USR2 wnlctl $SLOT_TEST2 &" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST2; sleep 0.2; SIGNAL=USR2 wnlctl $SLOT_TEST2 &" C-m
 # should result in no execution
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST3; sleep 1; wnlctl $SLOT_TEST3 &" C-m
 # should result in a terminated execution, then a clean execution

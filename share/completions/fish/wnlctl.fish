@@ -1,9 +1,9 @@
 function __fish_complete_wnlctl
 	set -q XDG_RUNTIME_DIR; and set RUNTIME_DIR "$XDG_RUNTIME_DIR"; or set RUNTIME_DIR /tmp
-	for f in $RUNTIME_DIR/wnl_slot_*.pid
-		set mtch (string match --regex ".*wnl_slot_(\d+).pid" $f)
-		set pid (fuser $f 2> /dev/null | string split " " --no-empty)[1]
-		set cmdline (cat /proc/$pid/cmdline | string split0)[3..]
+	for f in $RUNTIME_DIR/wnl_slot_*.sock
+		set mtch (string match --regex ".*wnl_slot_(\d+).sock" $f)
+		set sock (fuser $f 2> /dev/null | string split " " --no-empty)[1]
+		set cmdline (cat /proc/$sock/cmdline | string split0)[3..]
 		if string match --regex --quiet "^\d+\$" $cmdline[1]
 			set cmdline (echo  "$cmdline[2..]")
 		end

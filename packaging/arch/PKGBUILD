@@ -7,7 +7,7 @@ license=('GPL-3.0-or-later')
 source=("${pkgname}-${pkgver}.tar.gz")
 url="https://codeberg.org/jcgl/wnl"
 sha256sums=('SKIP')
-depends=('util-linux' 'ncurses')
+depends=('util-linux' 'ncurses' 'procps-ng' 'socat')
 changelog=wnl.changes
 
 package() {

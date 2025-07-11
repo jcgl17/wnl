@@ -16,10 +16,13 @@ BuildRequires: make
 %if %{defined suse_version}
 Requires: util-linux
 Requires: ncurses-utils
+Requires: procps
 %else
 Requires: util-linux-core
 Requires: ncurses
+Requires: procps-ng
 %endif
+Requires: socat
 
 %description
 Brings the comfort of IDE-style keyboard shortcuts with the flexibility of the Unix command line.

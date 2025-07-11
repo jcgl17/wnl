@@ -7,10 +7,10 @@ _wnlctl_completion() {
   cur="${COMP_WORDS[COMP_CWORD]}"
 
   if [ "$COMP_CWORD" -eq 1 ]; then
-    local files=("$RUNTIME_DIR"/wnl_slot_*.pid)
+    local files=("$RUNTIME_DIR"/wnl_slot_*.sock)
     local numbers=()
     for file in "${files[@]}"; do
-      if [[ $file =~ "$RUNTIME_DIR"/wnl_slot_([0-9]+).pid ]]; then
+      if [[ $file =~ "$RUNTIME_DIR"/wnl_slot_([0-9]+).sock ]]; then
         numbers+=("${BASH_REMATCH[1]}")
       fi
     done

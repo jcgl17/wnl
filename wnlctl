@@ -1,7 +1,9 @@
 #!/bin/bash
 
+set -uo pipefail
+
 # check if $1 is a number
-if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
+if [ "${1:-}" -eq "${1:-}" ] 2>/dev/null; then
 	# if it is, then use it as the slot
 	SLOT=$1
 	# and then shift (remove $1 from args) to have the rest turn into CMD
@@ -12,20 +14,22 @@ else
 fi
 
 RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
-PIDFILE="${RUNTIME_DIR}/wnl_slot_${SLOT}.pid"
+SOCKFILE="${RUNTIME_DIR}/wnl_slot_${SLOT}.sock"
 
-if [ ! -f "$PIDFILE" ]; then
-	echo "Error: pidfile $PIDFILE not found" >&2
+if [ ! -S "$SOCKFILE" ]; then
+	echo "Error: socket $SOCKFILE not found" >&2
 	exit 1
 fi
-
-PID=$(cat "$PIDFILE")
 
 SIGNAL=${SIGNAL:-USR1}
 
-if ! kill -0 "$PID" >/dev/null 2>&1; then
-	echo "Error: process $PID not found" >&2
-	exit 1
-fi
+case "$SIGNAL" in
+	USR1)
+		COMMAND=START
+		;;
+	USR2)
+		COMMAND=STOP
+		;;
+esac
 
-kill "-${SIGNAL}" "$PID"
+echo "$COMMAND" | socat -U UNIX-CLIENT:"$SOCKFILE" STDIN

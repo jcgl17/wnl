@@ -1,10 +1,13 @@
 #!/bin/bash
 
+set -u
+
 load_rc_file() {
 	# shellcheck disable=SC1090
 	test -f "$RC_FILE" && source "$RC_FILE"
 }
 
+SHOW_CONFIG=${SHOW_CONFIG:-false}
 ### CONFIGURATION {{
 RC_FILE=${RC_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/wnl/wnlrc}
 load_rc_file
@@ -17,6 +20,7 @@ HOOK_EXIT=${HOOK_EXIT:-}
 BANNER_PRE_ENABLE=${BANNER_PRE_ENABLE:-1}
 BANNER_POST_ENABLE=${BANNER_POST_ENABLE:-1}
 SHELL_INTEGRATION_ENABLE=${SHELL_INTEGRATION_ENABLE:-1}
+AUTOSLOT_MIN=${AUTOSLOT_MIN:-1}
 AUTOSLOT_MAX=${AUTOSLOT_MAX:-10}
 RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
 DOUBLE_TAP_REQUIRED=${DOUBLE_TAP_REQUIRED:-false}
@@ -71,12 +75,17 @@ banner_post() {
 	else
 		local bracket_color="${FMT_GREEN}"
 		local exit_code_color="${FMT_NORMAL}"
+		local restarting_notice=""
 	fi
 	shell_integrations_prompt_start
 	echo "${bracket_color}[[ ${fmt_normal}${FMT_GREY}finished ${fmt_normal}$(cmd_title)${FMT_GREY} with exit code ${exit_code_color}${EXIT_CODE}${restarting_notice}${fmt_normal} ${FMT_GREY}at${fmt_normal} ${stop_time}(+$(diff_time "$START_TIME" "$stop_time")) ${FMT_GREY}in slot${fmt_normal} $SLOT ${bracket_color}]]${fmt_normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
 	fi
+}
+
+function banner_autoslot() {
+	test -v AUTOSLOT && test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
 }
 
 hook_pre() {
@@ -126,7 +135,7 @@ cmd_title() {
 kill_signal() {
 	cmd=$1
 	# if user has specified a kill signal, user that
-	if [ -n "$KILL_SIGNAL" ]; then
+	if [ -v KILL_SIGNAL ] && [ -n "$KILL_SIGNAL" ]; then
 		echo "$KILL_SIGNAL"
 		return 0
 	fi
@@ -140,7 +149,17 @@ kill_signal() {
 	fi
 }
 
-handle_usr1() {
+function sleep_started() {
+	if ! pgrep -f "$SLP_CMD" > /dev/null; then
+		$SLP_CMD &
+	fi
+}
+
+function sleep_killed() {
+	test -v SLP_CMD && pkill -f "$SLP_CMD"
+}
+
+received_command_start() {
 	if $DOUBLE_TAP_REQUIRED; then
 		now=$(date +%s)
 		if [[ -v last_double_tap ]] && (( now <= (last_double_tap + DOUBLE_TAP_TIMEOUT_MS/1000 ) )); then
@@ -154,37 +173,36 @@ handle_usr1() {
 	fi
 }
 
-handle_usr2(){
+received_command_stop(){
 	SIGNAL_STOP=1
 }
 
 handle_exit() {
-	rm -f "$PIDFILE"
-	test -n "$SLP_PID" && kill "$SLP_PID"
+	test -v SOCKFILE && rm -f "$SOCKFILE"
+	test -v LOCAL_SOCK && rm -f "$LOCAL_SOCK"
+	sleep_killed
 	hook_exit
 }
 
-trap handle_usr1 SIGUSR1
-trap handle_usr2 SIGUSR2
 trap handle_exit EXIT
 
-pidfile() {
+sockfile() {
 	local slot=$1
 	mkdir -p "${RUNTIME_DIR}"
-	echo "${RUNTIME_DIR}/wnl_slot_${slot}.pid"
+	echo "${RUNTIME_DIR}/wnl_slot_${slot}.sock"
 }
 
-function take_lock() {
+function lock_presockfile() {
 	local slot=$1
 	# shellcheck disable=SC2155
-	local pidfile_to_lock="$(pidfile "$slot")"
-	if [ ! -f "$pidfile_to_lock" ]; then
-		exec 17<>"$pidfile_to_lock"
+	local presockfile_to_lock="$(sockfile "$slot")"
+	if [ ! -e "$presockfile_to_lock" ]; then
+		exec 17<>"$presockfile_to_lock"
 		if ! flock -n -x 17; then
 			return 2
 		fi
-		echo $$ > "$pidfile_to_lock"
-		PIDFILE=$(pidfile "$SLOT")
+		echo $$ > "$presockfile_to_lock"
+		SOCKFILE=$(sockfile "$SLOT")
 	else
 		return 1
 	fi
@@ -193,11 +211,14 @@ function take_lock() {
 function stop_command() {
 	# if RUNNING_CMD is defined and it's running, then kill it
 	if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
-		kill -"$(kill_signal "$CMD_RAW")" "$RUNNING_CMD"
+		local KILL_SIGNAL
+		KILL_SIGNAL="$(kill_signal "$CMD_RAW")"
+		kill -"$KILL_SIGNAL" "$RUNNING_CMD"
 		wait -n "$RUNNING_CMD"
 		# export EXIT_CODE for consumption by hook
 		export EXIT_CODE=$?
 		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			unset RUNNING_CMD
 			banner_post
 			hook_post
 		fi
@@ -222,18 +243,18 @@ function start_command() {
 
 ### ARG PARSING {{
 # check if $1 is a number
-if [ -n "$1" ] && [ "$1" -eq "$1" ] 2>/dev/null; then
+if [ "${1:-}" -eq "${1:-}" ] 2>/dev/null; then
 	# if it is, then use it as the slot
 	SLOT=$1
 	# and then shift (remove $1 from args) to have the rest turn into CMD
 	shift
-	take_lock "$SLOT" || { echo "Error: unable to acquire lock on $(pidfile "$SLOT")" >&2 && exit 1; }
+	lock_presockfile "$SLOT" || { echo "Error: unable to acquire lock on $(sockfile "$SLOT")" >&2 && exit 1; }
 else
 	# otherwise, find the first available slot
 	AUTOSLOT=1
-	for ((i=1; i <= "$AUTOSLOT_MAX"; i++)); do
+	for ((i=AUTOSLOT_MIN; i <= AUTOSLOT_MAX; i++)); do
 		SLOT=$i
-		take_lock "$SLOT" && break
+		lock_presockfile "$SLOT" && break
 	done
 	if [ -z "$SLOT" ]; then
 		echo Error: unable to find an available slot
@@ -242,6 +263,24 @@ else
 fi
 export SLOT
 
+# possibly enter ssh mode
+if [ "${1:-}" = "ssh" ]; then
+	SSH_MODE=true
+	SOCKFILE=$(sockfile "$SLOT")
+	rm -f "$SOCKFILE"
+	shift
+	# and then possibly get the remote slot
+	if [ "${1:-}" -eq "${1:-}" ] 2>/dev/null; then
+		REMOTE_SLOT=$1
+		shift
+	else
+		REMOTE_SLOT=$SLOT
+	fi
+	SSH_ARGS="${*:?must provide arguments to ssh}"
+elif [ "${1:-}" = "--" ]; then
+	shift
+fi
+
 # escape command to preserve user-provided as faithfully as possible
 CMD=$(printf "%q " "$@")
 CMD_RAW="$*"
@@ -249,14 +288,32 @@ CMD_RAW="$*"
 CMD="${CMD%" "}"
 ### }} ARG PARSING
 
+function get_config_item() {
+	local config_key=${1:?must provide config key}
+	local config
+	config=$(printf "%s" "$(IFS="=" read -r _ value < <(cat | grep "${config_key}="); echo "$value")")
+	echo "$config"
+}
+
+sleep_duration="123000"
+SOCKFILE=$(sockfile "$SLOT")
+# iterate over each byte of $str
+for ((i=0; i<${#SOCKFILE}; i++)); do
+  c=${SOCKFILE:i:1}
+  sleep_duration+=$(printf "%d" "'$c")
+done
+
+SLP_CMD="sleep 1000000${sleep_duration}000${SLOT}"
+
 ### CONSTANTS {{
 # https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
 SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
 SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
 
-# stop_signal/SIGUSR2 handling relies on identifying the process being run
+# stop_command handling relies on identifying the process being run
 # ($RUNNING_CMD). standard shells (e.g. bash) when called with `-c` do an
-# immediate `exec`. The pid can then easily be found with `RUNNING_CMD=$!`.
+# immediate `exec`. The pid can then easily be found with `RUNNING_CMD=$!`, as
+# shown in start_command
 #
 # However, fish does a `fork` then `exec`. So pgrepping for the child process
 # would becomes necessary. The fish devs are aware of this difference in
@@ -294,17 +351,95 @@ if test -t 1; then
 	fi
 fi
 
-## MAIN {{
-test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
+### SHOW CONFIG MODE {{
+if $SHOW_CONFIG; then
+	for c in RC_FILE \
+		EXIT_AFTER_NONZERO \
+		SHELL_CMD \
+		HOOK_PRE \
+		HOOK_POST \
+		HOOK_STARTUP \
+		HOOK_EXIT \
+		BANNER_PRE_ENABLE \
+		BANNER_POST_ENABLE \
+		SHELL_INTEGRATION_ENABLE \
+		AUTOSLOT_MIN \
+		AUTOSLOT_MAX \
+		RUNTIME_DIR \
+		DOUBLE_TAP_REQUIRED \
+		DOUBLE_TAP_TIMEOUT_MS \
+		RESTART_MODE \
+		SLOT \
+		SOCKFILE \
 
-sleep infinity &
-SLP_PID=$!
+	do
+		# https://unix.stackexchange.com/a/397587
+		echo $c="${!c}"
+	done
+	exit 0
+fi
+### }} SHOW CONFIG MODE
+
+### SSH MODE {{
+SSH_MODE=${SSH_MODE:-false}
+SSH_EXECUTABLE="${SSH_EXECUTABLE:-ssh}"
+SSH_ARGS="-o StreamLocalBindUnlink=yes ${SSH_ARGS:-}"
+
+if $SSH_MODE; then
+	function run_ssh() {
+		local local_config remote_config remote_sock ssh_command_line
+		local_config=$(SHOW_CONFIG=true wnl "$SLOT" -- ooga) || { echo error retrieving local wnl config; exit 1; }
+		# shellcheck disable=SC2086
+		remote_config=$($SSH_EXECUTABLE $SSH_ARGS -- SHOW_CONFIG=true wnl "$REMOTE_SLOT") || { echo error retrieving remote wnl config; exit 1; }
+		LOCAL_SOCK="$(echo "$local_config" | get_config_item SOCKFILE)"
+		# create a short-lived file in the place where SSH will create a socket.
+		# this does two things:
+		# 1. helps claim the socket so that other wnl instances won't steal it, and
+		# 2. provides an indication that the slot will be filled, such that a
+		# user's HOOK_STARTUP can take any desired actions
+		# https://stackoverflow.com/a/13829090
+		set -o noclobber
+		{ : > "$LOCAL_SOCK" ; } &> /dev/null
+		remote_sock="$(echo "$remote_config" | get_config_item SOCKFILE)"
+		ssh_command_line="$SSH_EXECUTABLE $SSH_ARGS -L $LOCAL_SOCK:$remote_sock"
+		echo -n "${FMT_BOLD}${FMT_BLUE}"
+		banner_autoslot
+		echo -n "${FMT_NORMAL}"
+		echo "$ssh_command_line"
+		echo -n "${FMT_BOLD}${FMT_BLUE}"
+		$(if command -v cowsay > /dev/null; then echo cowsay; else echo echo; fi) "enter in 'wnl $REMOTE_SLOT <yourcommand>'"
+		# hook_startup added here to preserve symmetry with hook_exit, which is
+		# called on EXIT
+		echo -n "${FMT_NORMAL}"
+		hook_startup
+		$ssh_command_line
+	}
+
+	run_ssh
+	exit $?
+fi
+### }} SSH MODE
+
+## MAIN {{
+banner_autoslot
+
 SIGNAL_START=0
 SIGNAL_STOP=0
 hook_startup
-while true; do 
+rm -f "$SOCKFILE"
+while read -r operation _; do
 	# reload rc file every run
 	load_rc_file
+	case $operation in 
+		START)
+			received_command_start
+			;;
+		STOP)
+			received_command_stop
+			;;
+		*)
+			;;
+	esac
 	# echo eval state begin: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
 	if [ "$SIGNAL_STOP" -eq "1" ]; then
 		stop_command
@@ -318,23 +453,27 @@ while true; do
 	fi
 	SIGNAL_START=0
 	SIGNAL_STOP=0
+	sleep_started
 	# echo eval state end: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
-	if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
-		wait -n "$RUNNING_CMD"
+	if [ -v RUNNING_CMD ]; then
+		# FIXME: mild race condition here--it can happen that:
+		# 1. the above `test -v` succeeds
+		# 2. stop_command() successfully `wait`s RUNNING_CMD
+		# 3. then, because `wait`ing a PID isn't idempotent, this following
+		# `wait` fails
+		wait -n "$RUNNING_CMD" $(pgrep -f "$SLP_CMD")
 		# export EXIT_CODE for consumption by hook
 		export EXIT_CODE=$?
-		# only summarize if RUNNING_CMD is done, i.e. that the wait wasn't just interrupted to handle a signal
+		# only run post-CMD actions if RUNNING_CMD is done, i.e. that the wait wasn't just interrupted to handle a signal
 		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+			unset RUNNING_CMD
 			banner_post
 			hook_post
 		fi
-	else
-		wait
 	fi
-	# restart infinite sleep, just in case it got killed somehow (e.g. by the user)
-	if ! kill -0 "$SLP_PID" 2>/dev/null; then
-		sleep infinity &
-		SLP_PID=$!
-	fi
-done
+done < <(socat -u UNIX-LISTEN:"$SOCKFILE",fork,reuseaddr STDOUT \
+	| while read -r line; do
+	sleep_killed; printf '%s\n' "$line"
+done  
+)
 ## }} MAIN
