@@ -235,7 +235,7 @@ function start_command() {
 			# this `set -m` crucially enables job control for this backgrounded subshell.
 			# without it, SIGINT handling doesn't work.
 			set -m
-			exec $SHELL_CMD "$EXEC_IF_FISH${CMD}" >&1 2>&2
+			exec $SHELL_CMD "$EXEC_IF_FISH${CMD}" 1>&"$stdout" 2>&"$stderr" <&"$stdin"
 		) &
 		RUNNING_CMD=$!
 	fi
@@ -423,6 +423,9 @@ fi
 ## MAIN {{
 banner_autoslot
 
+exec {stdin}<&0
+exec {stdout}>&1
+exec {stderr}>&2
 SIGNAL_START=0
 SIGNAL_STOP=0
 hook_startup
