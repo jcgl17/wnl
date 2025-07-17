@@ -33,6 +33,18 @@ SSH_ARGS="-o StreamLocalBindUnlink=yes ${SSH_ARGS:-}"
 WNL_SSH="${WNL_SSH:-}"
 ### }} CONFIGURATION
 
+function maybe_tput_colors() {
+	if test -t "${stdout}"; then
+		local ncolors
+		ncolors=$(tput colors)
+		if test -n "$ncolors" && test "$ncolors" -ge 8; then
+			tput "$@"
+		else
+			:
+		fi
+	fi
+}
+
 ### INTERNAL VALUES {{
 exec {stdin}<&0
 exec {stdout}>&1
@@ -44,38 +56,32 @@ SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
 SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
 # define colors
 # https://unix.stackexchange.com/a/10065
-if test -t 1; then
-	# see if it supports colors...
-	ncolors=$(tput colors)
-	if test -n "$ncolors" && test "$ncolors" -ge 8; then
-		FMT_BOLD="$(tput bold)"
-		export FMT_BOLD
-		FMT_UNDERLINE="$(tput smul)"
-		export FMT_UNDERLINE
-		FMT_STANDOUT="$(tput smso)"
-		export FMT_STANDOUT
-		FMT_NORMAL="$(tput sgr0)"
-		export FMT_NORMAL
-		FMT_BLACK="$(tput setaf 0)"
-		export FMT_BLACK
-		FMT_RED="$(tput setaf 1)"
-		export FMT_RED
-		FMT_GREEN="$(tput setaf 2)"
-		export FMT_GREEN
-		FMT_YELLOW="$(tput setaf 3)"
-		export FMT_YELLOW
-		FMT_BLUE="$(tput setaf 4)"
-		export FMT_BLUE
-		FMT_MAGENTA="$(tput setaf 5)"
-		export FMT_MAGENTA
-		FMT_CYAN="$(tput setaf 6)"
-		export FMT_CYAN
-		FMT_WHITE="$(tput setaf 7)"
-		export FMT_WHITE
-		FMT_GREY="$(tput setaf 8)"
-		export FMT_GREY
-	fi
-fi
+FMT_BOLD="$(maybe_tput_colors bold)"
+export FMT_BOLD
+FMT_UNDERLINE="$(maybe_tput_colors smul)"
+export FMT_UNDERLINE
+FMT_STANDOUT="$(maybe_tput_colors smso)"
+export FMT_STANDOUT
+FMT_NORMAL="$(maybe_tput_colors sgr0)"
+export FMT_NORMAL
+FMT_BLACK="$(maybe_tput_colors setaf 0)"
+export FMT_BLACK
+FMT_RED="$(maybe_tput_colors setaf 1)"
+export FMT_RED
+FMT_GREEN="$(maybe_tput_colors setaf 2)"
+export FMT_GREEN
+FMT_YELLOW="$(maybe_tput_colors setaf 3)"
+export FMT_YELLOW
+FMT_BLUE="$(maybe_tput_colors setaf 4)"
+export FMT_BLUE
+FMT_MAGENTA="$(maybe_tput_colors setaf 5)"
+export FMT_MAGENTA
+FMT_CYAN="$(maybe_tput_colors setaf 6)"
+export FMT_CYAN
+FMT_WHITE="$(maybe_tput_colors setaf 7)"
+export FMT_WHITE
+FMT_GREY="$(maybe_tput_colors setaf 8)"
+export FMT_GREY
 ### }} INTERNAL VALUES
 
 function diff_time() {
@@ -418,7 +424,7 @@ function run_ssh() {
 	remote_slot="$(echo "$remote_config" | get_config_item SLOT)"
 	local ssh_command_line=("$SSH_EXECUTABLE $SSH_ARGS -t -L $LOCAL_SOCK:$remote_sock")
 	banner_startup
-	if [[ -n "$CMD_RAW" ]]; then 
+	if [[ -n "$CMD_RAW" ]]; then
 		ssh_command_line+=("WNL_SSH=true wnl $remote_slot $CMD")
 	else
 		echo -n "${FMT_BLUE}${FMT_BOLD}"
