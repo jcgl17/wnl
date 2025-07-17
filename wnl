@@ -30,6 +30,7 @@ KILL_SIGNAL=${KILL_SIGNAL:-INT}
 SSH_MODE=${SSH_MODE:-false}
 SSH_EXECUTABLE="${SSH_EXECUTABLE:-ssh}"
 SSH_ARGS="-o StreamLocalBindUnlink=yes ${SSH_ARGS:-}"
+WNL_SSH="${WNL_SSH:-}"
 ### }} CONFIGURATION
 
 ### INTERNAL VALUES {{
@@ -139,8 +140,10 @@ function banner_post() {
 	fi
 }
 
-function banner_autoslot() {
-	test -v AUTOSLOT && test -n "$AUTOSLOT" && echo wnl starting with slot "$SLOT"
+function banner_startup() {
+	local ssh_suffix
+	ssh_suffix=$(if test -n "$WNL_SSH"; then echo " on $HOSTNAME"; fi)
+	echo wnl starting with slot "$SLOT$ssh_suffix"
 }
 
 function hook_pre() {
@@ -314,7 +317,8 @@ if [ "${1:-}" = "ssh" ]; then
 	else
 		REMOTE_SLOT=$SLOT
 	fi
-	SSH_ARGS+=" ${*:?must provide arguments to ssh}"
+	SSH_ARGS+=" ${1:?must provide arguments to ssh}"
+	shift
 elif [ "${1:-}" = "--" ]; then
 	shift
 fi
@@ -391,7 +395,7 @@ function show_config() {
 }
 
 function run_ssh() {
-	local local_config remote_config remote_sock ssh_command_line
+	local local_config remote_config remote_sock remote_slot
 	local_config=$(SHOW_CONFIG=true wnl "$SLOT" --) || {
 		echo error retrieving local wnl config
 		exit 1
@@ -411,18 +415,21 @@ function run_ssh() {
 	set -o noclobber
 	{ : >"$LOCAL_SOCK"; } &>/dev/null
 	remote_sock="$(echo "$remote_config" | get_config_item SOCKFILE)"
-	ssh_command_line="$SSH_EXECUTABLE $SSH_ARGS -L $LOCAL_SOCK:$remote_sock"
-	echo -n "${FMT_BOLD}${FMT_BLUE}"
-	banner_autoslot
-	echo -n "${FMT_NORMAL}"
-	echo "$ssh_command_line"
-	echo -n "${FMT_BOLD}${FMT_BLUE}"
-	$(if command -v cowsay >/dev/null; then echo cowsay; else echo echo; fi) "enter in 'wnl $REMOTE_SLOT <yourcommand>'"
+	remote_slot="$(echo "$remote_config" | get_config_item SLOT)"
+	local ssh_command_line=("$SSH_EXECUTABLE $SSH_ARGS -t -L $LOCAL_SOCK:$remote_sock")
+	banner_startup
+	if [[ -n "$CMD_RAW" ]]; then 
+		ssh_command_line+=("WNL_SSH=true wnl $remote_slot $CMD")
+	else
+		echo -n "${FMT_BLUE}${FMT_BOLD}"
+		$(if command -v cowsay >/dev/null; then echo cowsay; else echo echo; fi) "enter in 'wnl $REMOTE_SLOT <yourcommand>'"
+		echo -n "${FMT_NORMAL}"
+	fi
 	# hook_startup added here to preserve symmetry with hook_exit, which is
 	# called on EXIT
-	echo -n "${FMT_NORMAL}"
 	hook_startup
-	$ssh_command_line
+	# shellcheck disable=SC2068
+	${ssh_command_line[@]}
 }
 
 function main_loop() {
@@ -481,7 +488,7 @@ function main_loop() {
 function main() {
 	rm -f "$SOCKFILE"
 	main_loop &
-	banner_autoslot
+	banner_startup
 	hook_startup
 	while true; do
 		sleep infinity
