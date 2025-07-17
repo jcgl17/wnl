@@ -24,12 +24,12 @@ fi
 SIGNAL=${SIGNAL:-USR1}
 
 case "$SIGNAL" in
-	USR1)
-		COMMAND=START
-		;;
-	USR2)
-		COMMAND=STOP
-		;;
+USR1)
+	COMMAND=START
+	;;
+USR2)
+	COMMAND=STOP
+	;;
 esac
 
 echo "$COMMAND" | socat -U UNIX-CLIENT:"$SOCKFILE" STDIN

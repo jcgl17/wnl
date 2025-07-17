@@ -47,34 +47,53 @@ if test -t 1; then
 	# see if it supports colors...
 	ncolors=$(tput colors)
 	if test -n "$ncolors" && test "$ncolors" -ge 8; then
-		FMT_BOLD="$(tput bold)"; export FMT_BOLD
-		FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
-		FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
-		FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
-		FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
-		FMT_RED="$(tput setaf 1)"; export FMT_RED
-		FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
-		FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
-		FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
-		FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
-		FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
-		FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
-		FMT_GREY="$(tput setaf 8)"; export FMT_GREY
+		FMT_BOLD="$(tput bold)"
+		export FMT_BOLD
+		FMT_UNDERLINE="$(tput smul)"
+		export FMT_UNDERLINE
+		FMT_STANDOUT="$(tput smso)"
+		export FMT_STANDOUT
+		FMT_NORMAL="$(tput sgr0)"
+		export FMT_NORMAL
+		FMT_BLACK="$(tput setaf 0)"
+		export FMT_BLACK
+		FMT_RED="$(tput setaf 1)"
+		export FMT_RED
+		FMT_GREEN="$(tput setaf 2)"
+		export FMT_GREEN
+		FMT_YELLOW="$(tput setaf 3)"
+		export FMT_YELLOW
+		FMT_BLUE="$(tput setaf 4)"
+		export FMT_BLUE
+		FMT_MAGENTA="$(tput setaf 5)"
+		export FMT_MAGENTA
+		FMT_CYAN="$(tput setaf 6)"
+		export FMT_CYAN
+		FMT_WHITE="$(tput setaf 7)"
+		export FMT_WHITE
+		FMT_GREY="$(tput setaf 8)"
+		export FMT_GREY
 	fi
 fi
 ### }} INTERNAL VALUES
 
 function diff_time() {
-	t1=$(date -d "$1" +%s 2>/dev/null) || { echo "Bad date: $1" >&2; return 1; }
-	t2=$(date -d "$2" +%s 2>/dev/null) || { echo "Bad date: $2" >&2; return 1; }
+	t1=$(date -d "$1" +%s 2>/dev/null) || {
+		echo "Bad date: $1" >&2
+		return 1
+	}
+	t2=$(date -d "$2" +%s 2>/dev/null) || {
+		echo "Bad date: $2" >&2
+		return 1
+	}
 
 	# it turns out that arithmetic in bash can do cool things like assignment and ternaries
 	# https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html
 	# "ARITHMETIC EVALUATION" section in bash manpage
-	(( delta = t1 > t2 ? t1 - t2 : t2 - t1 ))
-	(( days = delta / 86400, delta %= 86400 ))
-	(( hours = delta / 3600, delta %= 3600  ))
-	(( mins = delta / 60, secs  = delta % 60 ))
+	((delta = t1 > t2 ? t1 - t2 : t2 - t1))
+	((days = delta / 86400, delta %= 86400))
+	((hours = delta / 3600, delta %= 3600))
+	((mins = delta / 60, secs = delta % 60))
 
 	if [ "$days" -gt 0 ]; then
 		printf "%d:%02d:%02d:%02d\n" "$days" "$hours" "$mins" "$secs"
@@ -126,12 +145,12 @@ function banner_autoslot() {
 
 function hook_pre() {
 	# shellcheck disable=SC2291
-	test -n "$HOOK_PRE"     && { $SHELL_CMD "$HOOK_PRE"     || echo HOOK_PRE     exited with code $?. continuing.; }
+	test -n "$HOOK_PRE" && { $SHELL_CMD "$HOOK_PRE" || echo HOOK_PRE exited with code $?. continuing.; }
 }
 
 function hook_post() {
 	# shellcheck disable=SC2291
-	test -n "$HOOK_POST"    && { $SHELL_CMD "$HOOK_POST"    || echo HOOK_POST    exited with code $?. continuing.; }
+	test -n "$HOOK_POST" && { $SHELL_CMD "$HOOK_POST" || echo HOOK_POST exited with code $?. continuing.; }
 }
 
 function hook_startup() {
@@ -141,7 +160,7 @@ function hook_startup() {
 
 function hook_exit() {
 	# shellcheck disable=SC2291
-	test -n "$HOOK_EXIT"    && { $SHELL_CMD "$HOOK_EXIT"    || echo HOOK_EXIT    exited with code $?. continuing.; }
+	test -n "$HOOK_EXIT" && { $SHELL_CMD "$HOOK_EXIT" || echo HOOK_EXIT exited with code $?. continuing.; }
 }
 
 function shell_integrations_cmd_start() {
@@ -158,17 +177,17 @@ function cmd_title() {
 	test $CMD_TITLE_MAXLENGTH -lt 10 && CMD_TITLE_MAXLENGTH=10
 	excess_title_length="$(("${#CMD_RAW}" - "${CMD_TITLE_MAXLENGTH}"))"
 	if [ "${excess_title_length}" -gt "1" ]; then
-		trim_head="${CMD_RAW:0:$(("$CMD_TITLE_MAXLENGTH"/2))}"
-		trim_tail="${CMD_RAW:$(("${#CMD}"-("$CMD_TITLE_MAXLENGTH"/2))):"${#CMD}"}"
-			CMD_TITLE="${trim_head}…${trim_tail}"
-		else
-			CMD_TITLE="$CMD_RAW"
+		trim_head="${CMD_RAW:0:$(("$CMD_TITLE_MAXLENGTH" / 2))}"
+		trim_tail="${CMD_RAW:$(("${#CMD}" - ("$CMD_TITLE_MAXLENGTH" / 2))):"${#CMD}"}"
+		CMD_TITLE="${trim_head}…${trim_tail}"
+	else
+		CMD_TITLE="$CMD_RAW"
 	fi
 	echo "$CMD_TITLE"
 }
 
 function sleep_started() {
-	if ! pgrep -f "$SLP_CMD" > /dev/null; then
+	if ! pgrep -f "$SLP_CMD" >/dev/null; then
 		$SLP_CMD &
 	fi
 }
@@ -180,7 +199,7 @@ function sleep_killed() {
 function received_command_start() {
 	if $DOUBLE_TAP_REQUIRED; then
 		now=$(date +%s)
-		if [[ -v last_double_tap ]] && (( now <= (last_double_tap + DOUBLE_TAP_TIMEOUT_MS/1000 ) )); then
+		if [[ -v last_double_tap ]] && ((now <= (last_double_tap + DOUBLE_TAP_TIMEOUT_MS / 1000))); then
 			SIGNAL_START=1
 			last_double_tap=0
 		else
@@ -191,7 +210,7 @@ function received_command_start() {
 	fi
 }
 
-function received_command_stop(){
+function received_command_stop() {
 	SIGNAL_STOP=1
 }
 
@@ -219,7 +238,7 @@ function lock_presockfile() {
 		if ! flock -n -x 17; then
 			return 2
 		fi
-		echo $$ > "$presockfile_to_lock"
+		echo $$ >"$presockfile_to_lock"
 		SOCKFILE=$(sockfile "$SLOT")
 	else
 		return 1
@@ -271,7 +290,7 @@ elif [[ -v SLOT ]] && [[ "$SLOT" -eq "$SLOT" ]]; then
 else
 	# otherwise, find the first available slot
 	AUTOSLOT=1
-	for ((i=AUTOSLOT_MIN; i <= AUTOSLOT_MAX; i++)); do
+	for ((i = AUTOSLOT_MIN; i <= AUTOSLOT_MAX; i++)); do
 		SLOT=$i
 		lock_presockfile "$SLOT" && break
 	done
@@ -312,9 +331,9 @@ CMD="${CMD%" "}"
 sleep_duration="123000"
 SOCKFILE=$(sockfile "$SLOT")
 # iterate over each byte of $str
-for ((i=0; i<${#SOCKFILE}; i++)); do
-  c=${SOCKFILE:i:1}
-  sleep_duration+=$(printf "%d" "'$c")
+for ((i = 0; i < ${#SOCKFILE}; i++)); do
+	c=${SOCKFILE:i:1}
+	sleep_duration+=$(printf "%d" "'$c")
 done
 SLP_CMD="sleep 1000000${sleep_duration}000${SLOT}"
 
@@ -339,7 +358,10 @@ fi
 function get_config_item() {
 	local config_key=${1:?must provide config key}
 	local config
-	config=$(printf "%s" "$(IFS="=" read -r _ value < <(cat | grep "${config_key}="); echo "$value")")
+	config=$(printf "%s" "$(
+		IFS="=" read -r _ value < <(cat | grep "${config_key}=")
+		echo "$value"
+	)")
 	echo "$config"
 }
 
@@ -361,9 +383,7 @@ function show_config() {
 		DOUBLE_TAP_TIMEOUT_MS \
 		RESTART_MODE \
 		SLOT \
-		SOCKFILE \
-
-	do
+		SOCKFILE; do
 		# https://unix.stackexchange.com/a/397587
 		echo $c="${!c}"
 	done
@@ -372,9 +392,15 @@ function show_config() {
 
 function run_ssh() {
 	local local_config remote_config remote_sock ssh_command_line
-	local_config=$(SHOW_CONFIG=true wnl "$SLOT" -- ooga) || { echo error retrieving local wnl config; exit 1; }
+	local_config=$(SHOW_CONFIG=true wnl "$SLOT" --) || {
+		echo error retrieving local wnl config
+		exit 1
+	}
 	# shellcheck disable=SC2086
-	remote_config=$($SSH_EXECUTABLE $SSH_ARGS -- SHOW_CONFIG=true wnl "$REMOTE_SLOT") || { echo error retrieving remote wnl config; exit 1; }
+	remote_config=$($SSH_EXECUTABLE $SSH_ARGS -- SHOW_CONFIG=true wnl "$REMOTE_SLOT") || {
+		echo error retrieving remote wnl config
+		exit 1
+	}
 	LOCAL_SOCK="$(echo "$local_config" | get_config_item SOCKFILE)"
 	# create a short-lived file in the place where SSH will create a socket.
 	# this does two things:
@@ -383,35 +409,34 @@ function run_ssh() {
 	# user's HOOK_STARTUP can take any desired actions
 	# https://stackoverflow.com/a/13829090
 	set -o noclobber
-	{ : > "$LOCAL_SOCK" ; } &> /dev/null
-		remote_sock="$(echo "$remote_config" | get_config_item SOCKFILE)"
-		ssh_command_line="$SSH_EXECUTABLE $SSH_ARGS -L $LOCAL_SOCK:$remote_sock"
-		echo -n "${FMT_BOLD}${FMT_BLUE}"
-		banner_autoslot
-		echo -n "${FMT_NORMAL}"
-		echo "$ssh_command_line"
-		echo -n "${FMT_BOLD}${FMT_BLUE}"
-		$(if command -v cowsay > /dev/null; then echo cowsay; else echo echo; fi) "enter in 'wnl $REMOTE_SLOT <yourcommand>'"
-		# hook_startup added here to preserve symmetry with hook_exit, which is
-		# called on EXIT
-		echo -n "${FMT_NORMAL}"
-		hook_startup
-		$ssh_command_line
-	}
+	{ : >"$LOCAL_SOCK"; } &>/dev/null
+	remote_sock="$(echo "$remote_config" | get_config_item SOCKFILE)"
+	ssh_command_line="$SSH_EXECUTABLE $SSH_ARGS -L $LOCAL_SOCK:$remote_sock"
+	echo -n "${FMT_BOLD}${FMT_BLUE}"
+	banner_autoslot
+	echo -n "${FMT_NORMAL}"
+	echo "$ssh_command_line"
+	echo -n "${FMT_BOLD}${FMT_BLUE}"
+	$(if command -v cowsay >/dev/null; then echo cowsay; else echo echo; fi) "enter in 'wnl $REMOTE_SLOT <yourcommand>'"
+	# hook_startup added here to preserve symmetry with hook_exit, which is
+	# called on EXIT
+	echo -n "${FMT_NORMAL}"
+	hook_startup
+	$ssh_command_line
+}
 
 function main_loop() {
 	while read -r operation _; do
 		# reload rc file every run
 		load_rc_file
 		case $operation in
-			START)
-				received_command_start
-				;;
-			STOP)
-				received_command_stop
-				;;
-			*)
-				;;
+		START)
+			received_command_start
+			;;
+		STOP)
+			received_command_stop
+			;;
+		*) ;;
 		esac
 		# echo eval state begin: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
 		if [ "$SIGNAL_STOP" -eq "1" ]; then
@@ -444,11 +469,13 @@ function main_loop() {
 				hook_post
 			fi
 		fi
-	done < <(socat -u UNIX-LISTEN:"$SOCKFILE",fork,reuseaddr STDOUT \
-		| while read -r line; do
-	sleep_killed; printf '%s\n' "$line"
-done  
-)
+	done < <(
+		socat -u UNIX-LISTEN:"$SOCKFILE",fork,reuseaddr STDOUT |
+			while read -r line; do
+				sleep_killed
+				printf '%s\n' "$line"
+			done
+	)
 }
 
 function main() {
