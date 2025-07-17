@@ -29,6 +29,38 @@ RESTART_MODE=${RESTART_MODE:-false}
 KILL_SIGNAL=${KILL_SIGNAL:-INT}
 ### }} CONFIGURATION
 
+### CONSTANTS {{
+exec {stdin}<&0
+exec {stdout}>&1
+exec {stderr}>&2
+SIGNAL_START=0
+SIGNAL_STOP=0
+# https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
+SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
+SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
+# define colors
+# https://unix.stackexchange.com/a/10065
+if test -t 1; then
+	# see if it supports colors...
+	ncolors=$(tput colors)
+	if test -n "$ncolors" && test "$ncolors" -ge 8; then
+		FMT_BOLD="$(tput bold)"; export FMT_BOLD
+		FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
+		FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
+		FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
+		FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
+		FMT_RED="$(tput setaf 1)"; export FMT_RED
+		FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
+		FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
+		FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
+		FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
+		FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
+		FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
+		FMT_GREY="$(tput setaf 8)"; export FMT_GREY
+	fi
+fi
+### }} CONSTANTS
+
 diff_time() {
 	t1=$(date -d "$1" +%s 2>/dev/null) || { echo "Bad date: $1" >&2; return 1; }
 	t2=$(date -d "$2" +%s 2>/dev/null) || { echo "Bad date: $2" >&2; return 1; }
@@ -200,8 +232,8 @@ function stop_command() {
 		export EXIT_CODE=$?
 		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
 			unset RUNNING_CMD
-			banner_post
-			hook_post
+			banner_post 1>&"$stdout" 2>&"$stderr" <&"$stdin"
+			hook_post 1>&"$stdout" 2>&"$stderr" <&"$stdin"
 		fi
 	fi
 }
@@ -286,11 +318,6 @@ done
 
 SLP_CMD="sleep 1000000${sleep_duration}000${SLOT}"
 
-### CONSTANTS {{
-# https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
-SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
-SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
-
 # stop_command handling relies on identifying the process being run
 # ($RUNNING_CMD). standard shells (e.g. bash) when called with `-c` do an
 # immediate `exec`. The pid can then easily be found with `RUNNING_CMD=$!`, as
@@ -307,29 +334,6 @@ if [[ "$SHELL_CMD" =~ .*fish\ -c ]]; then
 	EXEC_IF_FISH="exec "
 else
 	EXEC_IF_FISH=""
-fi
-### }} CONSTANTS
-
-# define colors
-# https://unix.stackexchange.com/a/10065
-if test -t 1; then
-	# see if it supports colors...
-	ncolors=$(tput colors)
-	if test -n "$ncolors" && test "$ncolors" -ge 8; then
-		FMT_BOLD="$(tput bold)"; export FMT_BOLD
-		FMT_UNDERLINE="$(tput smul)"; export FMT_UNDERLINE
-		FMT_STANDOUT="$(tput smso)"; export FMT_STANDOUT
-		FMT_NORMAL="$(tput sgr0)"; export FMT_NORMAL
-		FMT_BLACK="$(tput setaf 0)"; export FMT_BLACK
-		FMT_RED="$(tput setaf 1)"; export FMT_RED
-		FMT_GREEN="$(tput setaf 2)"; export FMT_GREEN
-		FMT_YELLOW="$(tput setaf 3)"; export FMT_YELLOW
-		FMT_BLUE="$(tput setaf 4)"; export FMT_BLUE
-		FMT_MAGENTA="$(tput setaf 5)"; export FMT_MAGENTA
-		FMT_CYAN="$(tput setaf 6)"; export FMT_CYAN
-		FMT_WHITE="$(tput setaf 7)"; export FMT_WHITE
-		FMT_GREY="$(tput setaf 8)"; export FMT_GREY
-	fi
 fi
 
 ### SHOW CONFIG MODE {{
@@ -402,14 +406,6 @@ fi
 ### }} SSH MODE
 
 ## MAIN {{
-banner_autoslot
-
-exec {stdin}<&0
-exec {stdout}>&1
-exec {stderr}>&2
-SIGNAL_START=0
-SIGNAL_STOP=0
-hook_startup
 rm -f "$SOCKFILE"
 while read -r operation _; do
 	# reload rc file every run
@@ -459,5 +455,11 @@ done < <(socat -u UNIX-LISTEN:"$SOCKFILE",fork,reuseaddr STDOUT \
 	| while read -r line; do
 	sleep_killed; printf '%s\n' "$line"
 done  
-)
+) &
+
+banner_autoslot
+hook_startup
+while true; do
+	sleep infinity
+done
 ## }} MAIN
