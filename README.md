@@ -145,7 +145,7 @@ Please report any issues you may encounter with the packages!
 
 ```plain
 wnl [SLOT_ID] COMMAND [COMMAND_ARGUMENTS...]
-wnl [SLOT_ID] ssh [REMOTE_SLOT_ID] [SSH_ARGUMENTS...]
+wnl [SLOT_ID] ssh [REMOTE_SLOT_ID] SSH_REMOTE_HOST [COMMAND [COMMAND_ARGUMENTS...]]
 wnlctl [SLOT_ID]
 ```
 
@@ -168,21 +168,30 @@ hi from slot 2!
 
 ### SSH Mode
 
-The ssh syntax shown above allows you to use wnlctl locally to trigger an instance of wnl running on a remote host.
-An interactive SSH session will be opened to the host specified in SSH_ARGUMENTS....
-Once inside that SSH session, you will have to manually run `wnl [REMOTE_SLOT_ID] COMMAND`.
+The ssh syntax shown above allows you to use `wnlctl` locally to trigger an instance of wnl running on a remote host.
+An interactive SSH session will be opened to the host specified in SSH_REMOTE_HOST.
+_wnl must already be installed on the remote host._
+
+If COMMAND is specified, `wnl` will immediately be started on the remote host, ready to be triggered by your local calls to `wnlctl`.
+
+```command
+user@localhost:~$ wnl ssh remotehost.example.com make test
+wnl starting with slot 1
+wnl starting with slot 1 on remotehost
+```
+
+If COMMAND is not specified, `wnl` will not be started and you'll be given a normal, interactive SSH session. You will have to manually run `wnl [REMOTE_SLOT_ID] COMMAND`. Instructions to that effect will be printed by `wnl` before opening the SSH session.
 
 ```command
 # you'd rarely want to manually specify REMOTE_SLOT_ID (3 here),
 # but it's an option
 user@localhost:~$ wnl 2 ssh 3 remotehost.example.com
-enter in 'wnl 1 <yourcommand>'
+wnl starting with slot 2
+enter in 'wnl 3 <yourcommand>'
 user@remotehost:~$ wnl 3 echo hi on a remote host!
 # you trigger slot 2 with wnlctl on your local machine
 hi on a remote host!
 ```
-
-wnl must already be installed on the remote host.
 
 ### Options
 

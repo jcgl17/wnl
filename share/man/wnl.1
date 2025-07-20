@@ -13,7 +13,8 @@
 .Op Ar SLOT_ID
 .Ar ssh
 .Op Ar REMOTE_SLOT_ID
-.Op Ar SSH_ARGUMENTS...
+.Ar SSH_REMOTE_HOST
+.Op Ar COMMAND Op Ar COMMAND_ARGUMENTS...
 .Nm wnlctl
 .Op Ar SLOT_ID
 .Sh DESCRIPTION
@@ -92,22 +93,42 @@ The ssh syntax shown above allows you to use
 locally to trigger an instance of
 .Nm wnl
 running on a remote host. An interactive SSH session will be opened to the host specified in
-.Ar SSH_ARGUMENTS...\c .
-Once inside that SSH session, you will have to manually run
-.Cm wnl
+.Ar SSH_REMOTE_HOST\c .
+.Em wnl must already be installed on the remote host.
+.Pp
+If
+.Op Ar COMMAND
+is specified,
+.Nm wnl
+will immediately be started on the remote host, ready to be triggered by your local calls to
+.Nm wnlctl\c .
+.Bd -literal -offset Ds
+user@localhost:~$ wnl ssh remotehost.example.com make test
+wnl starting with slot 1
+wnl starting with slot 1 on remotehost
+.Ed
+.Pp
+If
+.Op Ar COMMAND
+is not specified,
+.Nm wnl
+will not be started and you'll be given a normal, interactive SSH session. You will have to manually run
+.Nm wnl
 .Op Ar REMOTE_SLOT_ID
 .Ar COMMAND\c .
+Instructions to that effect will be printed by
+.Nm wnl
+before opening the SSH session.
 .Bd -literal -offset Ds
 # you'd rarely want to manually specify REMOTE_SLOT_ID (3 here),
 # but it's an option
 user@localhost:~$ wnl 2 ssh 3 remotehost.example.com
-enter in 'wnl 1 <yourcommand>'
+wnl starting with slot 2
+enter in 'wnl 3 <yourcommand>'
 user@remotehost:~$ wnl 3 echo hi on a remote host!
 # you trigger slot 2 with wnlctl on your local machine
 hi on a remote host!
 .Ed
-.Pp
-wnl must already be installed on the remote host.
 .Sh OPTIONS
 .Bl -tag -width SLOT_ID
 .It Ar SLOT_ID
