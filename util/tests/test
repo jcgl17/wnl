@@ -2,16 +2,18 @@
 TEST_SHELL=/bin/bash
 SESSION="wnl"
 WINDOW=0
-NTESTS=4
+NTESTS=5
 PANE_EXECUTOR=0
 PANE_TEST1=1
 PANE_TEST2=2
 PANE_TEST3=3
 PANE_TEST4=4
+PANE_TEST5=5
 SLOT_TEST1=11
 SLOT_TEST2=12
 SLOT_TEST3=13
 SLOT_TEST4=14
+SLOT_TEST5=15
 RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}/wnltest
 
 if ! tmux has-session -t $SESSION 2>/dev/null; then
@@ -34,6 +36,7 @@ tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST1    "export RC_FILE=/dev/null RUNT
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST2    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR} DOUBLE_TAP_REQUIRED=false RESTART_MODE=false ; $TEST_SHELL" C-m
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST3    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR} DOUBLE_TAP_REQUIRED=true  RESTART_MODE=false ; $TEST_SHELL" C-m
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST4    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR} DOUBLE_TAP_REQUIRED=false RESTART_MODE=true  ; $TEST_SHELL" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST5    "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR} DOUBLE_TAP_REQUIRED=false RESTART_MODE=true  ; $TEST_SHELL" C-m
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "export RC_FILE=/dev/null RUNTIME_DIR=${RUNTIME_DIR}                                              ; $TEST_SHELL" C-m
 
 # start the test instances
@@ -41,6 +44,7 @@ tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST1 "wnl $SLOT_TEST1 sleep 1" C-m
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST2 "wnl $SLOT_TEST2 sleep 1" C-m
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST3 "wnl $SLOT_TEST3 sleep 1" C-m
 tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST4 "wnl $SLOT_TEST4 sleep 1" C-m
+tmux send-keys -t $SESSION:$WINDOW.$PANE_TEST5 "wnl $SLOT_TEST5 sh -c 'echo testing shell; sleep 1 && echo done testing shell'" C-m
 sleep 1
 
 # run the tests
@@ -52,3 +56,5 @@ tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST2; sleep 0.2
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST3; sleep 1; wnlctl $SLOT_TEST3 &" C-m
 # should result in a terminated execution, then a clean execution
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST4; sleep 0.5; wnlctl $SLOT_TEST4 &" C-m
+# should result in a single, cancelled execution with exit code 143
+tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST5; sleep 0.2; SIGNAL=USR2 wnlctl $SLOT_TEST5 &" C-m
