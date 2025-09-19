@@ -1,82 +1,129 @@
-.Dd 2025-06-11
-.Dt WNL 1
-.Os
-.Sh NAME
-.Nm wnl
-.Nd Wait 'n' Listen: bind a command in one shell, and trigger it on-demand from anywhere
-.Sh SYNOPSIS
-.Nm wnl
-.Op Ar SLOT_ID
-.Ar COMMAND
-.Op Ar COMMAND_ARGUMENTS...
-.Nm wnl
-.Op Ar SLOT_ID
-.Ar ssh
-.Op Ar REMOTE_SLOT_ID
-.Ar SSH_REMOTE_HOST
-.Op Ar COMMAND Op Ar COMMAND_ARGUMENTS...
-.Nm wnlctl
-.Op Ar SLOT_ID
-.Sh DESCRIPTION
-.Nm wnl
-helps create a "Unix as IDE" workflow: you bind a frequently-run command with
-.Nm wnl\c ,
-then trigger it from anywhere with
-.Nm wnlctl\c .
-.Pp
+'\" t
+.\"     Title: wnl
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.20
+.\"      Date: 2025-09-19
+.\"    Manual: 
+.\"    Source: wnl
+.\"  Language: English
+.\"
+.TH "WNL" "1" "2025-09-19" "wnl" ""
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R w w
+.\}
+.SH "NAME"
+wnl \- Wait ’n’ Listen \- bind a command in one shell, and trigger it on\-demand from anywhere
+.SH "SYNOPSIS"
+.sp
+\fBwnl\fP [\fISLOT_ID\fP] \fICOMMAND\fP [\fICOMMAND_ARGUMENTS\fP]
+.br
+\fBwnl\fP [\fISLOT_ID\fP] ssh [\fIREMOTE_SLOT_ID\fP] \fISSH_REMOTE_HOST\fP [\fICOMMAND\fP [\fICOMMAND_ARGUMENTS\fP...]]
+.br
+\fBwnlctl\fP [\fISLOT_ID\fP]
+.br
+.SH "DESCRIPTION"
+.sp
+\fBwnl\fP helps create a "Unix as IDE" workflow: you bind a frequently\-run command with \fBwnl\fP, then trigger it from anywhere with \fBwnlctl\fP.
+.sp
 For example:
-.Bl -enum
-.It
-Bind a command (\c
-.Ar COMMAND\c )
-to
-.Ar SLOT_ID
-.Cm 1
-in one shell with
-.Nm wnl
-.Dl $ wnl 1 make test
-.It
-(repeatedly) Trigger 
-.Ar COMMAND
-by calling
-.Nm wnlctl
-from another shell
-.Dl $ wnlctl 1
-.Pp
-Or bind
-.Cm wnlctl 1
-to a keyboard shortcut within your desktop environment.
-.It
-(optional) Interrupt
-.Ar COMMAND
-with
-.Nm wnlctl
-.Dl $ SIGNAL=USR2 wnlctl 1
-.It
-When you're done with this command, un-bind it by exiting
-.Nm wnl
-with
-.Cm Ctrl-c
-.El
-.Pp
-While
-.Ar COMMAND
-is running, repeated calls to
-.Nm wnlctl
-do nothing. When
-.Ar COMMAND
-is not running,
-.Nm wnl
-will sit and wait until
-.Nm wnlctl
-triggers it again.
-.Sh SLOTS
-A "slot" (specified with 
-.Ar SLOT_ID\c )
-represents a single instance of
-.Nm wnl\c .
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 1." 4.2
+.\}
+Bind a command (\fICOMMAND\fP) to \fISLOT_ID\fP \fB1\fP in one shell with \fBwnl\fP
+.br
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ wnl 1 make test
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 2." 4.2
+.\}
+(repeatedly) Trigger \fICOMMAND\fP by calling \fBwnlctl\fP from another shell
+.br
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ wnlctl 1
+.fam
+.fi
+.if n .RE
+.sp
+Or bind \fBwnlctl 1\fP to a keyboard shortcut within your desktop environment.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 3." 4.2
+.\}
+(optional) Interrupt \fICOMMAND\fP with \fBwnlctl\fP
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ SIGNAL=USR2 wnlctl 1
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 4." 4.2
+.\}
+When you’re done with this command, un‐bind it by exiting wnl with \f(CRCtrl‐c\fP
+.RE
+.sp
+While \fICOMMAND\fP is running, repeated calls to \fBwnlctl\fP do nothing. When \fICOMMAND\fP is not running, wnl will sit and wait until \fBwnlctl\fP triggers it again.
+.SH "SLOTS"
+.sp
+A "slot" (specified with \fISLOT_ID\fP) represents a single instance of wnl.
 This allows for multiple, separate commands to be bound:
-.Bd -literal -offset Ds
+.sp
+.if n .RS 4
+.nf
+.fam C
 # running two instances in subshells, just to keep this example concise
 $ (wnl 1 echo hi from slot 1! &); (wnl 2 echo hi from slot 2! &)
 $ wnlctl 1; wnlctl 2
@@ -86,164 +133,178 @@ hi from slot 1!
 hi from slot 2!
 [[ finished echo hi from slot 1! with exit code 0 at 10:12:29 in slot 1 ]]
 [[ finished echo hi from slot 2! with exit code 0 at 10:12:29 in slot 2 ]]
-.Ed
-.Sh SSH MODE
-The ssh syntax shown above allows you to use
-.Nm wnlctl
-locally to trigger an instance of
-.Nm wnl
-running on a remote host. An interactive SSH session will be opened to the host specified in
-.Ar SSH_REMOTE_HOST\c .
-.Em wnl must already be installed on the remote host.
-.Pp
-If
-.Op Ar COMMAND
-is specified,
-.Nm wnl
-will immediately be started on the remote host, ready to be triggered by your local calls to
-.Nm wnlctl\c .
-.Bd -literal -offset Ds
+.fam
+.fi
+.if n .RE
+.SH "SSH MODE"
+.sp
+The ssh syntax shown above in the synopsis allows you to use \fBwnlctl\fP locally to trigger an instance of wnl
+running on a remote host. An interactive SSH session will be opened to the host specified in \fISSH_REMOTE_HOST\fP.
+\fIwnl must already be installed on the remote host.\fP
+.sp
+If \fICOMMAND\fP is specified, wnl will immediately be started on the remote host, ready to be triggered by your local calls to \fBwnlctl\fP.
+.sp
+.if n .RS 4
+.nf
+.fam C
 user@localhost:~$ wnl ssh remotehost.example.com make test
 wnl starting with slot 1
 wnl starting with slot 1 on remotehost
-.Ed
-.Pp
-If
-.Op Ar COMMAND
-is not specified,
-.Nm wnl
-will not be started and you'll be given a normal, interactive SSH session. You will have to manually run
-.Nm wnl
-.Op Ar REMOTE_SLOT_ID
-.Ar COMMAND\c .
-Instructions to that effect will be printed by
-.Nm wnl
-before opening the SSH session.
-.Bd -literal -offset Ds
-# you'd rarely want to manually specify REMOTE_SLOT_ID (3 here),
-# but it's an option
+.fam
+.fi
+.if n .RE
+.sp
+If \fICOMMAND\fP is not specified, wnl will not be started and you\(cqll be given a normal, interactive SSH session. You will have to manually run \fBwnl\fP \fIREMOTE_SLOT_ID COMMAND\fP. Instructions to that effect will be printed by wnl before opening the SSH session.
+.sp
+.if n .RS 4
+.nf
+.fam C
+# you\*(Aqd rarely want to manually specify REMOTE_SLOT_ID (3 here),
+# but it\*(Aqs an option
 user@localhost:~$ wnl 2 ssh 3 remotehost.example.com
 wnl starting with slot 2
-enter in 'wnl 3 <yourcommand>'
+enter in \*(Aqwnl 3 wyourcommandw\*(Aq
 user@remotehost:~$ wnl 3 echo hi on a remote host!
 # you trigger slot 2 with wnlctl on your local machine
 hi on a remote host!
-.Ed
-.Sh OPTIONS
-.Bl -tag -width SLOT_ID
-.It Ar SLOT_ID
-Numeric identifier of the slot. By default,
-.Nm wnl
-picks the first free slot (counting up from 1).
-.Nm wnlctl
-defaults to slot 1.
-.It Ar REMOTE_SLOT_ID
-In SSH mode, numeric identifier of the slot used on the remote host. By default, it is the same as
-.Ar SLOT_ID\c .
-.El
-.Sh ENVIRONMENT
-.Bl -tag -width WIDTH
-.It Ev SIGNAL
-Used with
-.Nm wnlctl\c .
-The signal that is sent to
-.Nm wnl\c .
-Either
-.Cm USR1
-to tell 
-.Nm wnl
-to start command execution, or
-.Cm USR2
-to tell
-.Nm wnl
-to terminate execution. Defaults to
-.Cm USR1\c .
-.El
-.Bl -tag -width WIDTH
-.It Ev DOUBLE_TAP_REQUIRED
-Used with
-.Nm wnl\c .
-If true, two quick signals from
-.Nm wnlctl
-are required before triggering
-.Ar COMMAND\c .
-Choose
-.Cm true
-or
-.Cm false\c .
-Defaults to
-.Cm false\c .
-.El
-.Bl -tag -width WIDTH
-.It Ev RESTART_MODE
-Used with
-.Nm wnl\c .
-If true, a trigger from
-.Nm wnlctl
-while
-.Ar COMMAND
-is already running will restart
-.Ar COMMAND\c .
-Choose
-.Cm true
-or
-.Cm false\c .
-Defaults to
-.Cm false\c .
-.El
-.Sh FILES
-User configuration file:
-.Pa ~/.config/wnl/wnlrc
-.Pp
-The only interesting things to configure are hooks. Hooks are shell snippets that are executed at various points in wnl's lifecycle:
-.Bl -tag
-.It Cm HOOK_STARTUP
-Run once when
-.Nm wnl
-starts
-.It Cm HOOK_PRE
-Run just before each invocation of
-.Ar COMMAND
-.It Cm HOOK_POST
-Run just after each invocation of
-.Ar COMMAND\c .
-The variable
-.Va EXIT_CODE
-contains the command’s exit status.
-.It Cm HOOK_EXIT
-Run once when
-.Nm wnl
-exits (after you hit Ctrl-c)
-.El
-.Pp
-Example
-.Fa wnlrc :
-.Bd -literal -offset Ds
+.fam
+.fi
+.if n .RE
+.SH "OPTIONS"
+.sp
+\fBSLOT_ID\fP
+.RS 4
+Numeric identifier of the slot. By default, \fBwnl\fP picks the first free slot (counting up from 1). \fBwnlctl\fP defaults to slot 1.
+.RE
+.sp
+\fBREMOTE_SLOT_ID\fP
+.RS 4
+In SSH mode, numeric identifier of the slot used on the remote host. By default, it is the same as \fBSLOT_ID\fP.
+.RE
+.SH "ENVIRONMENT"
+.sp
+\fBSIGNAL\fP
+.RS 4
+Used with \fBwnlctl\fP. The signal that is sent to \fBwnl\fP. Either \f(CRUSR1\fP to tell wnl to start command execution, or \f(CRUSR2\fP to tell wnl to terminate execution. Defaults to \f(CRUSR1\fP.
+.RE
+.sp
+\fBDOUBLE_TAP_REQUIRED\fP
+.RS 4
+Used with \fBwnl\fP. If true, two quick signals from \fBwnlctl\fP are required before triggering \fBCOMMAND\fP. Choose \f(CRtrue\fP or \f(CRfalse\fP. Defaults to \f(CRfalse\fP.
+.RE
+.sp
+\fBRESTART_MODE\fP
+.RS 4
+Used with \fBwnl\fP. If true, a trigger from \fBwnlctl\fP while \fICOMMAND\fP is already running will restart \fBCOMMAND\fP. Choose \f(CRtrue\fP or \f(CRfalse\fP. Defaults to \f(CRfalse\fP.
+.RE
+.SH "FILES"
+.sp
+User configuration file: \f(CR~/.config/wnl/wnlrc\fP
+.sp
+The only interesting things to configure are hooks. Hooks are shell snippets that are executed at various points in wnl\(cqs lifecycle:
+.sp
+\fBHOOK_STARTUP\fP
+.RS 4
+Run once when wnl starts
+.RE
+.sp
+\fBHOOK_PRE\fP
+.RS 4
+Run just before each invocation of \fICOMMAND\fP
+.RE
+.sp
+\fBHOOK_POST\fP
+.RS 4
+Run just after each invocation of \fICOMMAND\fP. The variable \fIEXIT_CODE\fP contains the command’s exit status.
+.RE
+.sp
+\fBHOOK_EXIT\fP
+.RS 4
+Run once when wnl exits (after you hit Ctrl\-c)
+.RE
+.sp
+Example \f(CRwnlrc\fP:
+.sp
+.if n .RS 4
+.nf
+.fam C
 # Play a gentle tone whenever wnl is triggered
-HOOK_PRE='pw-play /usr/share/sounds/ocean/stereo/service-logout.oga &'
+HOOK_PRE=\*(Aqpw\-play /usr/share/sounds/ocean/stereo/service\-logout.oga &\*(Aq
 # Play a an alert whenever the command run by wnl fails with a nonzero exit code
-# $EXIT_CODE is set to the exit code from the now-finished command
-HOOK_POST='test "$EXIT_CODE" -eq 0 || pw-play /usr/share/sounds/oxygen/stereo/message-connectivity-error.ogg &'
+# $EXIT_CODE is set to the exit code from the now\-finished command
+HOOK_POST=\*(Aqtest "$EXIT_CODE" \-eq 0 || pw\-play /usr/share/sounds/oxygen/stereo/message\-connectivity\-error.ogg &\*(Aq
 # ANSI color/formatting codes are available in $FMT_* variables
-HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_NORMAL"'
-.Ed
-.Sh EXAMPLES
-.Bl -enum
-.It
+HOOK_EXIT=\*(Aqecho "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_NORMAL"\*(Aq
+.fam
+.fi
+.if n .RE
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 1." 4.2
+.\}
 Run tests in the next free slot:
-.Dl $ wnl make test
-.It
-Trigger slot 1 (for example, bound to Ctrl-F1 in your desktop environment):
-.Dl $ wnlctl 1
-.It
-Abort the command in slot 1 (for example, bound to Ctrl-Shift-F1 in your desktop environment):
-.Dl $ SIGNAL=USR2 wnlctl 1
-.El
-.Sh SEE ALSO
-.Xr entr 1
-— another Unix-as-IDE tool
-.Sh BUGS
-Report bugs at
-.Li https://codeberg.org/jcgl/wnl/issues
+.br
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ wnl make test
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 2." 4.2
+.\}
+Trigger slot 1 (for example, bound to Ctrl\-F1 in your desktop environment):
+.br
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ wnlctl 1
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.  sp -1
+.  IP " 3." 4.2
+.\}
+Abort the command in slot 1 (for example, bound to Ctrl\-Shift\-F1 in your desktop environment):
+.br
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ SIGNAL=USR2 wnlctl 1
+.fam
+.fi
+.if n .RE
+.RE
+.SH "SEE ALSO"
+.sp
+entr(1) — another Unix\-as\-IDE tool
+.SH "BUGS"
+.sp
+Report bugs at \c
+.URL "https://codeberg.org/jcgl/wnl/issues" "" ""
 or email
-.Li j@cgl.sh
+.MTO "j\(atcgl.sh" "" ""

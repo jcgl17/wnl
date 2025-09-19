@@ -16,6 +16,9 @@ COMPLETION_DIR_BASH := $(PREFIX)/share/bash-completion/completions
 COMPLETION_DIR_FISH := $(PREFIX)/share/fish/vendor_completions.d
 LICENSES_DIR := $(PREFIX)/share/licenses/wnl
 
+share/man/wnl.1:
+	asciidoctor --backend manpage share/man/wnl.1.adoc
+
 .PHONY: install
 install:
 	install -vDm 0755 wnl wnlctl -t $(BIN_DIR)
@@ -36,6 +39,7 @@ uninstall:
 
 .PHONY: link
 link:
+	mkdir -p $(BIN_DIR) $(COMPLETION_DIR_BASH) $(COMPLETION_DIR_FISH) $(MAN_DIR)/man1
 	ln -sf $(CURDIR)/wnl $(BIN_DIR)/wnl
 	ln -sf $(CURDIR)/wnlctl $(BIN_DIR)/wnlctl
 	ln -sf $(CURDIR)/share/completions/bash/wnl $(COMPLETION_DIR_BASH)/wnl
