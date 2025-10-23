@@ -247,6 +247,8 @@ function handle_exit() {
 
 trap handle_exit EXIT
 
+trap 'exit 0' INT
+
 function sockfile() {
 	local slot=$1
 	mkdir -p "${RUNTIME_DIR}"
