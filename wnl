@@ -203,7 +203,7 @@ kill_signal() {
 		return 0
 	fi
 	# otherwise, fall back on heuristics
-	if [[ "$cmd" =~ ^[a-zA-Z]*sh\ -c ]]; then
+	if [[ "$cmd" =~ ^make( |$)  ]]; then
 		echo TERM
 	else
 		echo INT
