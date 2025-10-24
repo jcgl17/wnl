@@ -204,7 +204,15 @@ By default, it is the same as `SLOT_ID`.
 
 ### Environment
 
-`SIGNAL`: Used with `wnlctl`. The signal that is sent to `wnl`. Either `USR1` to tell `wnl` to start command execution, or `USR2` to tell `wnl` to terminate execution. Defaults to `USR1`.
+`SIGNAL`: Used with `wnl` and `wnlctl`.
+
+ With `wnlctl`, this controls what message is sent to `wnl`. `USR1` tells `wnl`
+ to start command execution, and `USR2` tells `wnl` to terminate execution.
+ Defaults to `USR1`.
+
+ With `wnl`, this controls what signal is sent to a running instance of
+ COMMMAND when instructed by `wnlctl` to terminate execution. Defaults to
+ `INT`.
 
 `DOUBLE_TAP_REQUIRED`: Used with `wnl`. If true, two signals from `wnlctl` are required before triggering `COMMAND`. Choose `true` or `false`. Defaults to `false`.
 

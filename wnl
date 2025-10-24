@@ -26,6 +26,7 @@ RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
 DOUBLE_TAP_REQUIRED=${DOUBLE_TAP_REQUIRED:-false}
 DOUBLE_TAP_TIMEOUT_MS=${DOUBLE_TAP_TIMEOUT_MS:-200}
 RESTART_MODE=${RESTART_MODE:-false}
+SIGNAL=${SIGNAL:-INT}
 SSH_MODE=${SSH_MODE:-false}
 SSH_EXECUTABLE="${SSH_EXECUTABLE:-ssh}"
 SSH_ARGS="-o StreamLocalBindUnlink=yes ${SSH_ARGS:-}"
@@ -196,13 +197,7 @@ function cmd_title() {
 
 # kill_signal decides what signal should be sent to kill RUNNING_CMD
 kill_signal() {
-	cmd=$1
-	# if user has specified a kill signal, user that
-	if [ -v KILL_SIGNAL ] && [ -n "$KILL_SIGNAL" ]; then
-		echo "$KILL_SIGNAL"
-		return 0
-	fi
-	echo INT
+        echo $SIGNAL
 }
 
 function sleep_started() {
