@@ -202,12 +202,7 @@ kill_signal() {
 		echo "$KILL_SIGNAL"
 		return 0
 	fi
-	# otherwise, fall back on heuristics
-	if [[ "$cmd" =~ ^make( |$)  ]]; then
-		echo TERM
-	else
-		echo INT
-	fi
+	echo INT
 }
 
 function sleep_started() {
@@ -236,6 +231,10 @@ function received_command_start() {
 
 function received_command_stop() {
 	SIGNAL_STOP=1
+}
+
+function received_command_unknown() {
+	echo received unknown command "'$1'"
 }
 
 function handle_exit() {
@@ -276,7 +275,7 @@ function stop_command() {
 	if [ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null; then
 		local KILL_SIGNAL
 		KILL_SIGNAL="$(kill_signal "$CMD_RAW")"
-		kill -"$KILL_SIGNAL" "$RUNNING_CMD"
+		kill -"$KILL_SIGNAL" -"$RUNNING_CMD"
 		wait -n "$RUNNING_CMD"
 		# export EXIT_CODE for consumption by hook
 		export EXIT_CODE=$?
@@ -298,7 +297,7 @@ function start_command() {
 			# this `set -m` crucially enables job control for this backgrounded subshell.
 			# without it, SIGINT handling doesn't work.
 			set -m
-			exec $SHELL_CMD "$EXEC_IF_FISH${CMD}" 1>&"$stdout" 2>&"$stderr" <&"$stdin"
+			exec setsid $SHELL_CMD "$EXEC_IF_FISH${CMD}" 1>&"$stdout" 2>&"$stderr" <&"$stdin"
 		) &
 		RUNNING_CMD=$!
 	fi
@@ -467,7 +466,10 @@ function main_loop() {
 		STOP)
 			received_command_stop
 			;;
-		*) ;;
+		*)
+			received_command_unknown "$operation"
+			continue
+			;;
 		esac
 		# echo eval state begin: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
 		if [ "$SIGNAL_STOP" -eq "1" ]; then

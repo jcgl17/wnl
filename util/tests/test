@@ -56,5 +56,5 @@ tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST2; sleep 0.2
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST3; sleep 1; wnlctl $SLOT_TEST3 &" C-m
 # should result in a terminated execution, then a clean execution
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST4; sleep 0.5; wnlctl $SLOT_TEST4 &" C-m
-# should result in a single, cancelled execution with exit code 143
+# should result in a single, cancelled execution with exit code 130
 tmux send-keys -t $SESSION:$WINDOW.$PANE_EXECUTOR "wnlctl $SLOT_TEST5; sleep 0.2; SIGNAL=USR2 wnlctl $SLOT_TEST5 &" C-m
