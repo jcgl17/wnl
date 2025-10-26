@@ -26,6 +26,7 @@ RUNTIME_DIR=${RUNTIME_DIR:-${XDG_RUNTIME_DIR:-/tmp}}
 DOUBLE_TAP_REQUIRED=${DOUBLE_TAP_REQUIRED:-false}
 DOUBLE_TAP_TIMEOUT_MS=${DOUBLE_TAP_TIMEOUT_MS:-200}
 RESTART_MODE=${RESTART_MODE:-false}
+STOPSTART_MODE=${STOPSTART_MODE:-false}
 SIGNAL=${SIGNAL:-INT}
 SSH_MODE=${SSH_MODE:-false}
 SSH_EXECUTABLE="${SSH_EXECUTABLE:-ssh}"
@@ -298,6 +299,14 @@ function start_command() {
 	fi
 }
 
+function start_or_stop_command() {
+	if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
+		start_command
+	else
+		stop_command
+	fi
+}
+
 ### ARG PARSING {{
 # check if $1 is a number
 if [ "${1:-}" -eq "${1:-}" ] 2>/dev/null; then
@@ -404,6 +413,7 @@ function show_config() {
 		DOUBLE_TAP_REQUIRED \
 		DOUBLE_TAP_TIMEOUT_MS \
 		RESTART_MODE \
+		STOPSTART_MODE \
 		SLOT \
 		SOCKFILE; do
 		# https://unix.stackexchange.com/a/397587
@@ -470,12 +480,16 @@ function main_loop() {
 		if [ "$SIGNAL_STOP" -eq "1" ]; then
 			stop_command
 		elif [ "$SIGNAL_START" -eq 1 ]; then
-			if $RESTART_MODE; then
-				restarting=true
-				stop_command
-				restarting=false
+			if $STOPSTART_MODE; then
+				start_or_stop_command
+			else
+				if $RESTART_MODE; then
+					restarting=true
+					stop_command
+					restarting=false
+				fi
+				start_command
 			fi
-			start_command
 		fi
 		SIGNAL_START=0
 		SIGNAL_STOP=0

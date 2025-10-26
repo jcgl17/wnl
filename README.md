@@ -218,6 +218,8 @@ By default, it is the same as `SLOT_ID`.
 
 `RESTART_MODE`: Used with `wnl`. If true, a trigger from `wnlctl` while `COMMAND` is already running will restart `COMMAND`. Choose `true` or `false`. Defaults to `false`.
 
+`STOPSTART_MODE`: Used with `wnl`. If true, a trigger from `wnlctl` while `COMMAND` is already running will stop `COMMAND`, and a trigger while `COMMAND` is not running will start it. Choose `true` or `false`. Defaults to `false`. Mutually exclusive with `RESTART_MODE`
+
 ### Configuration
 
 User configuration file: `~/.config/wnl/wnlrc`
