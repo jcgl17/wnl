@@ -53,8 +53,10 @@ exec {stderr}>&2
 SIGNAL_START=0
 SIGNAL_STOP=0
 # https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers
-SHELL_INTEGRATION_PROMPT_START='\x1b\x5d133;A\x1b\x5c'
-SHELL_INTEGRATION_CMD_START='\x1b\x5d133;C\x1b\x5c'
+SHELL_INTEGRATION_OSC='\x1b\x5d'
+SHELL_INTEGRATION_ST='\x1b\x5c'
+SHELL_INTEGRATION_PROMPT_START="${SHELL_INTEGRATION_OSC}133;A${SHELL_INTEGRATION_ST}"
+SHELL_INTEGRATION_CMD_START="${SHELL_INTEGRATION_OSC}133;C${SHELL_INTEGRATION_ST}"
 # define colors
 # https://unix.stackexchange.com/a/10065
 FMT_BOLD="$(maybe_tput_colors bold)"
@@ -179,6 +181,14 @@ function shell_integrations_cmd_start() {
 
 function shell_integrations_prompt_start() {
 	test "$SHELL_INTEGRATION_ENABLE" -ne "0" && echo -ne "$SHELL_INTEGRATION_PROMPT_START"
+}
+
+function shell_integration_window_title() {
+	if [ "$SHELL_INTEGRATION_ENABLE" -ne "0" ]; then
+		local title
+		title="wnl $SLOT: $CMD_RAW"
+		echo -ne "${SHELL_INTEGRATION_OSC}0;${title}${SHELL_INTEGRATION_ST}"
+	fi
 }
 
 function cmd_title() {
@@ -456,6 +466,7 @@ function run_ssh() {
 	# hook_startup added here to preserve symmetry with hook_exit, which is
 	# called on EXIT
 	hook_startup
+	shell_integration_window_title
 	# shellcheck disable=SC2068
 	${ssh_command_line[@]}
 }
@@ -525,6 +536,7 @@ function main() {
 	main_loop &
 	banner_startup
 	hook_startup
+	shell_integration_window_title
 	while true; do
 		sleep infinity
 	done
