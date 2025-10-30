@@ -282,7 +282,7 @@ function stop_command() {
 		local KILL_SIGNAL
 		KILL_SIGNAL="$(kill_signal "$CMD_RAW")"
 		kill -"$KILL_SIGNAL" "$RUNNING_CMD" $(pgrep -P $RUNNING_CMD)
-		wait -n "$RUNNING_CMD"
+		wait -n "$RUNNING_CMD" $(pgrep -f "$SLP_CMD")
 		# export EXIT_CODE for consumption by hook
 		export EXIT_CODE=$?
 		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
@@ -473,6 +473,7 @@ function run_ssh() {
 
 function main_loop() {
 	while read -r operation _; do
+		sleep_started
 		# reload rc file every run
 		load_rc_file
 		case $operation in
@@ -504,7 +505,6 @@ function main_loop() {
 		fi
 		SIGNAL_START=0
 		SIGNAL_STOP=0
-		sleep_started
 		# echo eval state end: SIGNAL_STOP: $SIGNAL_STOP, SIGNAL_START: $SIGNAL_START, RUNNING_CMD: $RUNNING_CMD, IS_RUNNING: "$([ -v RUNNING_CMD ] && kill -0 "$RUNNING_CMD" 2>/dev/null && echo yes || echo no)"
 		if [ -v RUNNING_CMD ]; then
 			# FIXME: mild race condition here--it can happen that:
