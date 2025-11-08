@@ -14,10 +14,12 @@ BuildRequires: make
 
 # https://en.opensuse.org/openSUSE:Build_Service_cross_distribution_howto
 %if %{defined suse_version}
+BuildRequires: ruby3.4-rubygem-asciidoctor
 Requires: util-linux
 Requires: ncurses-utils
 Requires: procps
 %else
+BuildRequires: rubygem-asciidoctor
 Requires: util-linux-core
 Requires: ncurses
 Requires: procps-ng
