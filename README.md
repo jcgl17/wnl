@@ -71,12 +71,6 @@ When `COMMAND` is not running, `wnl` will sit and wait until `wnlctl` triggers i
     - [Dependencies](#dependencies)
   - [Packages](#packages)
 - [Usage](#usage)
-  - [Syntax](#syntax)
-  - [Slots](#slots)
-  - [SSH Mode](#ssh-mode)
-  - [Options](#options)
-  - [Environment](#environment)
-  - [Configuration](#configuration)
 - [Roadmap](#roadmap)
 - [The problem space](#the-problem-space)
 - [Example scenarios](#example-scenarios)
@@ -97,6 +91,8 @@ Run `make install USER_LOCAL=1` to install just to your home directory.
 Uninstall with `sudo make uninstall` and `make uninstall USER_LOCAL=1` respectively.
 
 Alternatively, you can just put these two shell scripts—`wnl` and `wnlctl`—in your `$PATH`, e.g. in `~/.local/bin`.
+
+(`asciidoctor` is required to build the manpage, and is required for the above `make install` commands.)
 
 #### Dependencies
 
@@ -141,110 +137,7 @@ Please report any issues you may encounter with the packages!
 
 ## Usage
 
-### Syntax
-
-```plain
-wnl [SLOT_ID] COMMAND [COMMAND_ARGUMENTS...]
-wnl [SLOT_ID] ssh [REMOTE_SLOT_ID] SSH_REMOTE_HOST [COMMAND [COMMAND_ARGUMENTS...]]
-wnlctl [SLOT_ID]
-```
-
-### Slots
-
-A "slot" (specified with `SLOT_ID`) represents a single instance of `wnl`.
-This allows for multiple, separate commands to be bound:
-
-```command
-# running two instances in subshells, just to keep this example concise
-$ (wnl 1 echo hi from slot 1! &); (wnl 2 echo hi from slot 2! &)
-$ wnlctl 1; wnlctl 2
-[[ running echo hi from slot 1! at 10:12:29 in slot 1 ]]
-[[ running echo hi from slot 2! at 10:12:29 in slot 2 ]]
-hi from slot 1!
-hi from slot 2!
-[[ finished echo hi from slot 1! with exit code 0 at 10:12:29 in slot 1 ]]
-[[ finished echo hi from slot 2! with exit code 0 at 10:12:29 in slot 2 ]]
-```
-
-### SSH Mode
-
-The ssh syntax shown above allows you to use `wnlctl` locally to trigger an instance of wnl running on a remote host.
-An interactive SSH session will be opened to the host specified in SSH_REMOTE_HOST.
-_wnl must already be installed on the remote host._
-
-If COMMAND is specified, `wnl` will immediately be started on the remote host, ready to be triggered by your local calls to `wnlctl`.
-
-```command
-user@localhost:~$ wnl ssh remotehost.example.com make test
-wnl starting with slot 1
-wnl starting with slot 1 on remotehost
-```
-
-If COMMAND is not specified, `wnl` will not be started and you'll be given a normal, interactive SSH session. You will have to manually run `wnl [REMOTE_SLOT_ID] COMMAND`. Instructions to that effect will be printed by `wnl` before opening the SSH session.
-
-```command
-# you'd rarely want to manually specify REMOTE_SLOT_ID (3 here),
-# but it's an option
-user@localhost:~$ wnl 2 ssh 3 remotehost.example.com
-wnl starting with slot 2
-enter in 'wnl 3 <yourcommand>'
-user@remotehost:~$ wnl 3 echo hi on a remote host!
-# you trigger slot 2 with wnlctl on your local machine
-hi on a remote host!
-```
-
-### Options
-
-`SLOT_ID`: Numeric identifier of the slot.
-`wnl` defaults to the first unused slot (counting up from 1).
-`wnlctl` defaults to slot 1.
-
-`REMOTE_SLOT_ID`: In SSH mode, numeric identifier of the slot used on the remote host.
-By default, it is the same as `SLOT_ID`.
-
-### Environment
-
-`SIGNAL`: Used with `wnl` and `wnlctl`.
-
- With `wnlctl`, this controls what message is sent to `wnl`. `USR1` tells `wnl`
- to start command execution, and `USR2` tells `wnl` to terminate execution.
- Defaults to `USR1`.
-
- With `wnl`, this controls what signal is sent to a running instance of
- COMMMAND when instructed by `wnlctl` to terminate execution. Defaults to
- `INT`.
-
-`DOUBLE_TAP_REQUIRED`: Used with `wnl`. If true, two signals from `wnlctl` are required before triggering `COMMAND`. Choose `true` or `false`. Defaults to `false`.
-
-`RESTART_MODE`: Used with `wnl`. If true, a trigger from `wnlctl` while `COMMAND` is already running will restart `COMMAND`. Choose `true` or `false`. Defaults to `false`.
-
-`STOPSTART_MODE`: Used with `wnl`. If true, a trigger from `wnlctl` while `COMMAND` is already running will stop `COMMAND`, and a trigger while `COMMAND` is not running will start it. Choose `true` or `false`. Defaults to `false`. Mutually exclusive with `RESTART_MODE`
-
-### Configuration
-
-User configuration file: `~/.config/wnl/wnlrc`
-
-The only interesting things to configure are hooks.
-Hooks are shell snippets that are executed at various points in wnl's lifecycle:
-
-| Name           | Description                                                                                               |
-| -------------- | --------------------------------------------------------------------------------------------------------- |
-| `HOOK_STARTUP` | Run once when `wnl` starts                                                                                |
-| `HOOK_EXIT`    | Run once when `wnl` exits (after you hit Ctrl-c)                                                          |
-| `HOOK_PRE`     | Run just before each invocation of `COMMAND`                                                              |
-| `HOOK_POST`    | Run just after each invocation of `COMMAND`. The variable `EXIT_CODE` contains the command's exit status. |
-
-Example `wnlrc`:
-
-```bash
-# Play a gentle tone whenever wnl is triggered
-HOOK_PRE='pw-play /usr/share/sounds/ocean/stereo/service-logout.oga &'
-# Play a an alert whenever the command run by wnl fails with a nonzero exit code
-# $EXIT_CODE is set to the exit code from the now-finished command
-HOOK_POST='test "$EXIT_CODE" -eq 0 || pw-play /usr/share/sounds/oxygen/stereo/message-connectivity-error.ogg &'
-# ANSI color/formatting codes are available in $FMT_* variables
-HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_NORMAL"'
-```
+[`wnl` manpage](share/man/wnl.1.adoc)
 
 ## Roadmap
 
@@ -255,6 +148,7 @@ HOOK_EXIT='echo "$FMT_GREEN$FMT_BOLD"; cowsay thanks for using wnl; echo "$FMT_N
   - [x] Switch from signals for IPC to text over unix stream sockets
   - [ ] `wnlctl` can instruct `wnl` to send arbitrary signals to command executions
   - [ ] Send text to command executions' `stdin`
+  - [ ] `wnlctl` can optionally wait for command execution to finish before returning
 - [x] Add RESTART_MODE to restart a still-running command, rather than doing nothing
 - [x] Emit [shell integration escape codes](https://sw.kovidgoyal.net/kitty/shell-integration/#notes-for-shell-developers) to enable skipping between command executions
 - [x] Config file for things like emitting shell integration escape codes, enabling/configuring the banner emitted after a command executions finishes

@@ -15,9 +15,10 @@ MAN_DIR := $(PREFIX)/share/man
 COMPLETION_DIR_BASH := $(PREFIX)/share/bash-completion/completions
 COMPLETION_DIR_FISH := $(PREFIX)/share/fish/vendor_completions.d
 LICENSES_DIR := $(PREFIX)/share/licenses/wnl
+MANPAGE := share/man/wnl.1
 
 .PHONY: install
-install:
+install: $(MANPAGE)
 	install -vDm 0755 wnl wnlctl -t $(BIN_DIR)
 	install -vDm 0644 share/completions/bash/* -t $(COMPLETION_DIR_BASH)
 	install -vDm 0644 share/completions/fish/* -t $(COMPLETION_DIR_FISH)
@@ -35,7 +36,7 @@ uninstall:
 	rm -vfr $(LICENSES_DIR)
 
 .PHONY: link
-link:
+link: $(MANPAGE)
 	ln -sf $(CURDIR)/wnl $(BIN_DIR)/wnl
 	ln -sf $(CURDIR)/wnlctl $(BIN_DIR)/wnlctl
 	ln -sf $(CURDIR)/share/completions/bash/wnl $(COMPLETION_DIR_BASH)/wnl
@@ -52,3 +53,10 @@ release:
 	./util/generate_release_notes
 	sh -c "git tag $$(./util/generate_release_notes | head -n1) --annotate --sign --file <(./util/generate_release_notes)"
 	./util/generate_obs_changes | tee ~/code/home:jcgl/wnl_dev/wnl.changes > ~/code/home:jcgl/wnl/wnl.changes 
+
+$(MANPAGE):
+	asciidoctor -b manpage share/man/wnl.1.adoc
+
+.PHONY: clean
+clean:
+	rm -vf share/man/wnl.1
