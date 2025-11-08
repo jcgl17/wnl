@@ -2,7 +2,7 @@ Format: 1.0
 Source: wnl
 Version: 0.1.0
 Binary: wnl
-Maintainer: jcgl <j@cgl.sh>
+Maintainer: jcgl <j+wnl@cgl.sh>
 Architecture: any
 Build-Depends: debhelper (>= 9), make, asciidoctor
 Files:

@@ -1,7 +1,7 @@
 Source: wnl
 Section: utils
 Priority: optional
-Maintainer: jcgl <j@cgl.sh>
+Maintainer: jcgl <j+wnl@cgl.sh>
 Build-Depends: debhelper (>= 9), make, asciidoctor
 Homepage: https://codeberg.org/jcgl/wnl
 

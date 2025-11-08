@@ -170,4 +170,4 @@ entr(1) - another Unix-as-IDE tool that (re-)runs commands after file changes
 
 == Bugs
 
-Report bugs at https://codeberg.org/jcgl/wnl/issues or email j@cgl.sh
+Report bugs at https://codeberg.org/jcgl/wnl/issues or email j+wnl@cgl.sh
