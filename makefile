@@ -54,7 +54,7 @@ release:
 	sh -c "git tag $$(./util/generate_release_notes | head -n1) --annotate --sign --file <(./util/generate_release_notes)"
 	./util/generate_obs_changes | tee ~/code/home:jcgl/wnl_dev/wnl.changes > ~/code/home:jcgl/wnl/wnl.changes 
 
-$(MANPAGE):
+$(MANPAGE): share/man/wnl.1.adoc
 	asciidoctor -b manpage share/man/wnl.1.adoc
 
 .PHONY: clean

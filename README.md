@@ -163,6 +163,8 @@ Please report any issues you may encounter with the packages!
   - [x] RPM
 - [x] Add DOUBLE_TAP_REQUIRED to require multiple, quick signals from `wnlctl` to prevent accidental/fat-fingered triggers
 - [x] Add `wnl ssh` subcommand
+- [ ] Permit configuration via CLI options instead of only environment variables (#2)
+- [ ] Permit non-numeric slots
 
 ## The problem space
 
