@@ -181,6 +181,7 @@ function shell_integrations_cmd_start() {
 
 function shell_integrations_prompt_start() {
 	test "$SHELL_INTEGRATION_ENABLE" -ne "0" && echo -ne "$SHELL_INTEGRATION_PROMPT_START"
+	shell_integration_window_title
 }
 
 function shell_integration_window_title() {
