@@ -122,6 +122,7 @@ function banner_pre() {
 }
 
 function banner_post() {
+	local exit_code=$1
 	local stop_time
 	stop_time=$(date +%X)
 	test "$BANNER_POST_ENABLE" -eq "0" && return
@@ -142,7 +143,7 @@ function banner_post() {
 		local exit_code_color="${FMT_NORMAL}"
 		local restarting_notice=""
 	fi
-	shell_integrations_prompt_start
+	shell_integrations_prompt_start [$exit_code]
 	echo "${bracket_color}[[ ${fmt_normal}${FMT_GREY}finished ${fmt_normal}$(cmd_title)${FMT_GREY} with exit code ${exit_code_color}${EXIT_CODE}${restarting_notice}${fmt_normal} ${FMT_GREY}at${fmt_normal} ${stop_time}(+$(diff_time "$START_TIME" "$stop_time")) ${FMT_GREY}in slot${fmt_normal} $SLOT ${bracket_color}]]${fmt_normal}"
 	if [ "$EXIT_CODE" -ne "0" ] && [ "$EXIT_AFTER_NONZERO" -ne "0" ]; then
 		exit "$EXIT_CODE"
@@ -181,13 +182,14 @@ function shell_integrations_cmd_start() {
 
 function shell_integrations_prompt_start() {
 	test "$SHELL_INTEGRATION_ENABLE" -ne "0" && echo -ne "$SHELL_INTEGRATION_PROMPT_START"
-	shell_integration_window_title
+	shell_integration_window_title "$1"
 }
 
 function shell_integration_window_title() {
+	local separator=${1:-:}
 	if [ "$SHELL_INTEGRATION_ENABLE" -ne "0" ]; then
 		local title
-		title="wnl $SLOT: $CMD_RAW"
+		title="wnl $SLOT$separator $CMD_RAW"
 		echo -ne "${SHELL_INTEGRATION_OSC}0;${title}${SHELL_INTEGRATION_ST}"
 	fi
 }
@@ -288,7 +290,7 @@ function stop_command() {
 		export EXIT_CODE=$?
 		if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
 			unset RUNNING_CMD
-			banner_post 1>&"$stdout" 2>&"$stderr" <&"$stdin"
+			banner_post $EXIT_CODE 1>&"$stdout" 2>&"$stderr" <&"$stdin"
 			hook_post 1>&"$stdout" 2>&"$stderr" <&"$stdin"
 		fi
 	fi
@@ -299,6 +301,7 @@ function start_command() {
 	if ! [ -v RUNNING_CMD ] || ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
 		banner_pre
 		hook_pre
+		shell_integrations_prompt_start [󰔟]
 		shell_integrations_cmd_start
 		(
 			# this `set -m` crucially enables job control for this backgrounded subshell.
@@ -519,7 +522,7 @@ function main_loop() {
 			# only run post-CMD actions if RUNNING_CMD is done, i.e. that the wait wasn't just interrupted to handle a signal
 			if ! kill -0 "$RUNNING_CMD" 2>/dev/null; then
 				unset RUNNING_CMD
-				banner_post
+				banner_post $EXIT_CODE
 				hook_post
 			fi
 		fi
